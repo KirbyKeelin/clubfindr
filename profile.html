@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Profile</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="club-layout">
+
+        <!-- LEFT SIDEBAR (Reused) -->
+        <aside class="sidebar-left">
+            <nav>
+                <h2>Club Finder</h2>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="profile.html">Profile</a></li>
+                    <li><a href="settings.html">Settings</a></li>
+                    <li><a href="club-viewer.html">Club Viewer</a></li>
+                    <li><a href="manage-clubs.html">Manage Clubs</a></li>
+                    <li><a href="support.html">Support</a></li>
+                </ul>
+                <a href="#" class="sign-out-link" data-action="sign-out">Sign Out</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="profile-main">
+            <div class="profile-container">
+
+                <!-- Loading State -->
+                <div id="profileLoading" style="text-align:center; padding: 40px;">
+                    <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader"><line x1="12" x2="12" y1="2" y2="6"/><line x1="12" x2="12" y1="18" y2="22"/><line x1="4.93" x2="7.76" y1="4.93" y2="7.76"/><line x1="16.24" x2="19.07" y1="16.24" y2="19.07"/><line x1="2" x2="6" y1="12" y2="12"/><line x1="18" x2="22" y1="12" y2="12"/><line x1="4.93" x2="7.76" y1="19.07" y2="16.24"/><line x1="16.24" x2="19.07" y1="7.76" y2="4.93"/></svg></div>
+                    <h3>Loading profile...</h3>
+                </div>
+
+                <!-- PROFILE HEADER (Instagram style) -->
+                <div class="profile-header" id="profileContent" style="display:none;">
+
+                    <!-- Avatar Section -->
+                    <div class="profile-avatar-section">
+                        <div class="avatar-wrapper">
+                            <img src="" alt="Profile Picture" id="profileImage">
+                            <!-- Overlay for uploading a new picture -->
+                            <label for="avatarUpload" class="avatar-upload-overlay" id="avatarOverlay" style="display:none; cursor:pointer;">
+                                <span>Change Photo</span>
+                            </label>
+                            <input type="text" id="avatarUpload" placeholder="Enter Image URL" style="display: none; margin-top:10px; width:100%;">
+                        </div>
+                    </div>
+
+                    <!-- Info Section -->
+                    <div class="profile-info-section">
+                        <div class="profile-title-row">
+                            <h2 class="username" id="displayUsername"></h2>
+                            <button class="btn-primary" id="editProfileBtn">Edit Profile</button>
+                            <button class="btn-primary" id="saveProfileBtn" style="display:none; background:#10b981; color:white; border-color:#10b981;">Save Changes</button>
+                        </div>
+
+                        <div id="profileViewMode">
+                            <h3 class="real-name" id="displayName"></h3>
+                            <p class="bio" id="displayBio"></p>
+                        </div>
+
+                        <div id="profileEditMode" style="display:none; margin-top:10px;">
+                            <div class="form-group">
+                                <label>Display Name</label>
+                                <input type="text" id="editName" maxlength="100">
+                            </div>
+                            <div class="form-group" style="margin-top:10px;">
+                                <label>Bio (Max 500 characters)</label>
+                                <textarea id="editBio" maxlength="500" style="resize:none; height:100px; width:100%; border:1px solid #e5e7eb; border-radius:8px; padding:10px;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> <!-- End Profile Header -->
+
+            </div>
+        </main>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="profile.js"></script>
+</body>
+
+</html>

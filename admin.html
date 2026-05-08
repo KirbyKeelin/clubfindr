@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — Club Finder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="layout">
+        
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar-left">
+            <nav>
+                <h2>Admin Panel</h2>
+                <ul>
+                    <li><a href="index.html">← Back to App</a></li>
+                    <li><a href="#" class="active">Approvals</a></li>
+                </ul>
+                <a href="#" class="sign-out-link" data-action="sign-out">Sign Out</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main>
+            <h1>Pending Club Requests</h1>
+            <p class="page-subtitle">Review and approve new club requests from students.</p>
+            
+            <div id="admin-error" style="display:none; color: #dc2626; background: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                You do not have access to this page.
+            </div>
+
+            <div id="loading" style="text-align: center; margin: 40px 0;">Loading pending requests...</div>
+            
+            <div id="pending-list" style="display:flex; flex-direction:column; gap:15px;">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div id="empty-state" class="empty-state" style="display:none;">
+                <div class="empty-state-icon">✅</div>
+                <h3>All Caught Up!</h3>
+                <p>There are no pending club requests right now.</p>
+            </div>
+        </main>
+        
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Support — Club Finder</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="club-layout">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar-left">
+            <nav>
+                <h2>Club Finder</h2>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="profile.html">Profile</a></li>
+                    <li><a href="settings.html">Settings</a></li>
+                    <li><a href="club-viewer.html">Club Viewer</a></li>
+                    <li><a href="manage-clubs.html">Manage Clubs</a></li>
+                    <li><a href="support.html">Support</a></li>
+                </ul>
+                <a href="#" class="sign-out-link" data-action="sign-out">Sign Out</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="settings-main">
+                <section class="settings-section" style="display: flex; flex-direction: column; align-items: center; margin-top: 50px;">
+                    <h2 style="text-align: center;">Contact Support</h2>
+                    <p style="color: #777; margin-bottom: 20px; text-align: center; max-width: 500px;">
+                        Having an issue or need help? Send us a message and we'll get back to you as soon as possible.
+                    </p>
+
+                    <div class="settings-card" style="width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; align-items: stretch; text-align: left;">
+
+                        <div id="supportSuccess" class="support-success" style="display:none; text-align:center; padding-bottom: 15px;">
+                            <div class="empty-state-icon" style="font-size: 32px; margin-bottom: 10px;">✅</div>
+                            <h3 style="margin-top:0;">Message Sent!</h3>
+                            <p style="color:#555;">We've received your message and will get back to you shortly.</p>
+                        </div>
+
+                        <form id="supportForm" style="display: flex; flex-direction: column; gap: 15px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="supportSubject">Subject</label>
+                                <select id="supportSubject" class="language-select" style="width: 100%; max-width: none;">
+                                    <option value="" disabled selected>Select a topic</option>
+                                    <option value="account">Account Issue</option>
+                                    <option value="club">Club Problem</option>
+                                    <option value="bug">Bug Report</option>
+                                    <option value="feature">Feature Request</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="supportMessage">Message (Max 500 characters)</label>
+                                <textarea id="supportMessage" class="support-textarea"
+                                    placeholder="Describe your issue or question in detail..." rows="6" maxlength="500"
+                                    required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; resize: none; box-sizing: border-box; margin-top: 5px;"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn-primary" id="supportSubmitBtn" style="margin-top: 10px; width: 100%;">Send Message</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="support.js"></script>
+</body>
+
+</html>

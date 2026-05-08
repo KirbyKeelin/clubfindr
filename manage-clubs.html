@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Clubs — Club Finder</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="club-layout">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar-left">
+            <nav>
+                <h2>Club Finder</h2>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="profile.html">Profile</a></li>
+                    <li><a href="settings.html">Settings</a></li>
+                    <li><a href="club-viewer.html">Club Viewer</a></li>
+                    <li><a href="manage-clubs.html">Manage Clubs</a></li>
+                    <li><a href="support.html">Support</a></li>
+                </ul>
+                <a href="#" class="sign-out-link" data-action="sign-out">Sign Out</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="settings-main">
+            <div class="settings-container">
+                <h1 class="settings-page-title">Manage Clubs</h1>
+
+                <!-- Managed Clubs List -->
+                <section class="settings-section">
+                    <h2>Your Clubs</h2>
+                    <div id="managed-clubs-area">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Create Club -->
+                <section class="settings-section"
+                    style="display: flex; flex-direction: column; align-items: center; margin-top: 50px;">
+                    <h2 style="text-align: center;">Request a New Club</h2>
+                    <p style="color: #777; margin-bottom: 20px; text-align: center; max-width: 500px;">
+                        New clubs require approval. Please provide details so an administrator can review your request.
+                    </p>
+                    <div class="settings-card"
+                        style="width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; align-items: stretch; text-align: left;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="newClubName">Club Name</label>
+                            <input type="text" id="newClubName" placeholder="e.g. Photography Club"
+                                style="max-width: none;" />
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="newClubDesc">Description</label>
+                            <input type="text" id="newClubDesc" placeholder="What's this club about?"
+                                style="max-width: none;" />
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="newClubTags">Tags (comma separated)</label>
+                            <input type="text" id="newClubTags" placeholder="e.g. arts, academic"
+                                style="max-width: none;" />
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="newClubFaculty">Faculty Moderator</label>
+                            <input type="text" id="newClubFaculty" placeholder="Name of overseeing staff member"
+                                style="max-width: none;" />
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="newClubInfo">Additional Info / Funding Needs</label>
+                            <textarea id="newClubInfo" rows="3"
+                                placeholder="Any questions or specific funding requests?"
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+                        <button class="btn-primary" id="createClubBtn" style="margin-top: 10px; width: 100%;">Submit
+                            Request</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="manage-clubs.js"></script>
+</body>
+
+</html>

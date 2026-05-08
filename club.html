@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Club Detail</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="club-layout">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar-left">
+            <nav>
+                <h2>Club Finder</h2>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="profile.html">Profile</a></li>
+                    <li><a href="settings.html">Settings</a></li>
+                    <li><a href="club-viewer.html">Club Viewer</a></li>
+                    <li><a href="manage-clubs.html">Manage Clubs</a></li>
+                    <li><a href="support.html">Support</a></li>
+                </ul>
+                <a href="#" class="sign-out-link" data-action="sign-out">Sign Out</a>
+            </nav>
+        </aside>
+
+        <!-- RIGHT/MAIN SECTION -->
+        <main class="club-main">
+            <!-- TOP NAVIGATION -->
+            <div class="club-top-nav">
+                <button class="active">Main</button>
+                <button>Calendar</button>
+                <button>Members</button>
+                <button>Chat</button>
+                <button>Contact Info</button>
+            </div>
+
+            <!-- BANNER -->
+            <div class="club-banner">
+                <img src="https://picsum.photos/1200/400?random=10" alt="Club Banner">
+                <h1 class="club-banner-title" id="clubTitle">The Awesome Club</h1>
+            </div>
+
+            <!-- CONTENT AREA -->
+            <div class="club-content-area" id="clubContent">
+                <h3>Welcome to the club!</h3>
+                <p>This is the main view area where content for each tab will live.</p>
+            </div>
+        </main>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="club.js"></script>
+</body>
+
+</html>

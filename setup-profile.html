@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Profile — Club Finder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2 class="auth-logo">Club Finder</h2>
+
+            <form id="setupProfileForm" class="auth-form active" autocomplete="off">
+                <h3>Complete Your Profile</h3>
+                <p class="auth-subtitle">Just a few more details before you can join clubs.</p>
+
+                <div class="auth-message" id="setupMessage"></div>
+
+                <div class="form-group">
+                    <label for="setupName">Display Name *</label>
+                    <input type="text" id="setupName" placeholder="Your name" required />
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label style="display:flex; align-items:center; cursor:pointer;">
+                        <input type="checkbox" id="notifyEmail" style="width:auto; margin-right:10px;">
+                        Receive Email Notifications
+                    </label>
+                </div>
+
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="display:flex; align-items:center; cursor:pointer;">
+                        <input type="checkbox" id="notifyWeb" checked style="width:auto; margin-right:10px;">
+                        Receive In-App Notifications
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary auth-submit" id="setupBtn" style="margin-top: 20px;">Finish Setup</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="setup-profile.js"></script>
+</body>
+</html>

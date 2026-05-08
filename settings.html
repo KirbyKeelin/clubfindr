@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="club-layout">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar-left">
+            <nav>
+                <h2>Club Finder</h2>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="profile.html">Profile</a></li>
+                    <li><a href="settings.html">Settings</a></li>
+                    <li><a href="club-viewer.html">Club Viewer</a></li>
+                    <li><a href="manage-clubs.html">Manage Clubs</a></li>
+                    <li><a href="support.html">Support</a></li>
+                </ul>
+                <a href="#" class="sign-out-link" data-action="sign-out">Sign Out</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="settings-main">
+            <div class="settings-container">
+                <h1 class="settings-page-title">Settings</h1>
+
+                <!-- Account Security -->
+                <section class="settings-section">
+                    <h2>Account Security</h2>
+                    <div class="settings-card">
+                        <div id="passwordMessage" style="margin-bottom: 15px;"></div>
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" id="newPassword" placeholder="Enter new password">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                        </div>
+                        <button class="btn-primary" id="updatePasswordBtn">Update Password</button>
+                    </div>
+                </section>
+
+                <!-- Notifications -->
+                <section class="settings-section">
+                    <h2>Notifications</h2>
+                    <div class="settings-card">
+                        <div id="notifyMessage" style="margin-bottom: 15px;"></div>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="notifyEmailToggle">
+                            <span class="checkmark"></span>
+                            Email me about new events and announcements
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="notifyWebToggle">
+                            <span class="checkmark"></span>
+                            Show in-app notifications
+                        </label>
+                        <button class="btn-primary" id="saveNotifyBtn" style="margin-top:15px;">Save Preferences</button>
+                    </div>
+                </section>
+
+                <!-- Preferences -->
+                <section class="settings-section">
+                    <h2>Preferences</h2>
+                    <div class="settings-card preferences-grid">
+
+                        <div class="preference-item">
+                            <div class="pref-info">
+                                <h3>Appearance</h3>
+                                <p>Toggle between Light and Dark mode</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="darkModeToggle">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <!-- ARCHIVED FEATURE: LANGUAGE 
+                        <div class="preference-item">
+                            <div class="pref-info">
+                                <h3>Language</h3>
+                                <p>Select your preferred language</p>
+                            </div>
+                            <select class="language-select">
+                                <option value="en" selected>English</option>
+                                <option value="es">Español</option>
+                                <option value="fr">Français</option>
+                                <option value="zh">中文</option>
+                            </select>
+                        </div>
+                        -->
+
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="settings.js"></script>
+</body>
+
+</html>

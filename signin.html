@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In — Club Finder</title>
+    <meta name="description" content="Sign in or create an account to discover and join clubs on Club Finder." />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2 class="auth-logo">Club Finder</h2>
+
+            <!-- Sign In Form -->
+            <form id="signInForm" class="auth-form active" autocomplete="off">
+                <h3>Sign In</h3>
+                <p class="auth-subtitle">Welcome back to Club Finder</p>
+
+                <div class="auth-message" id="signInMessage"></div>
+
+                <div class="form-group">
+                    <label for="signInEmail">Email (@scrprep.org)</label>
+                    <input type="email" id="signInEmail" placeholder="you@scrprep.org" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="signInPassword">Password</label>
+                    <input type="password" id="signInPassword" placeholder="Enter your password" required />
+                </div>
+
+                <button type="submit" class="btn-primary auth-submit" id="signInBtn">Sign In</button>
+
+                <p class="auth-toggle">
+                    Don't have an account?
+                    <a href="#" id="showSignUp">Create one</a>
+                </p>
+
+                <!-- MICROSOFT SSO (IN STORAGE)
+                <button type="button" class="btn-primary auth-submit" id="microsoftSignInBtn" style="margin-top:20px; background:#2f3b4d;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; vertical-align: middle;"><path d="M11 11V3H3v8h8zm10 0V3h-8v8h8zm0 10v-8h-8v8h8zm-10 0v-8H3v8h8z"/></svg>
+                    Sign in with Microsoft
+                </button>
+                -->
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="signUpForm" class="auth-form" autocomplete="off">
+                <h3>Create Account</h3>
+                <p class="auth-subtitle">Join Club Finder today</p>
+
+                <div class="auth-message" id="signUpMessage"></div>
+
+                <div class="form-group">
+                    <label for="signUpEmail">Email (@scrprep.org)</label>
+                    <input type="email" id="signUpEmail" placeholder="you@scrprep.org" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="signUpPassword">Password</label>
+                    <input type="password" id="signUpPassword" placeholder="At least 6 characters" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="signUpConfirm">Confirm Password</label>
+                    <input type="password" id="signUpConfirm" placeholder="Re-enter your password" required />
+                </div>
+
+                <button type="submit" class="btn-primary auth-submit" id="signUpBtn">Create Account</button>
+
+                <p class="auth-toggle">
+                    Already have an account?
+                    <a href="#" id="showSignIn">Sign in</a>
+                </p>
+            </form>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="signin.js"></script>
+</body>
+</html>

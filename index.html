@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Club Finder Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="layout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar-left">
+      <nav>
+        <h2>Club Finder</h2>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="profile.html">Profile</a></li>
+          <li><a href="settings.html">Settings</a></li>
+          <li><a href="club-viewer.html">Club Viewer</a></li>
+          <li><a href="manage-clubs.html">Manage Clubs</a></li>
+          <li><a href="support.html">Support</a></li>
+        </ul>
+        <a href="#" class="sign-out-link" data-action="sign-out">Sign Out</a>
+      </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main>
+      <h1>Browse Clubs</h1>
+      <div id="club-grid" class="club-grid">
+        <!-- Cards get injected here dynamically -->
+      </div>
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar-right">
+      <h3>Search</h3>
+      <input type="text" id="searchInput" placeholder="Search clubs..." />
+
+      <h3>Filter by Tag</h3>
+      <div class="tags">
+        <button data-tag="academic">Academic</button>
+        <button data-tag="sports">Sports</button>
+        <button data-tag="arts">Arts</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
