@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let currentUser = null;
     let currentProfile = null;
+    let pendingAvatarFile = null;
 
     async function loadProfile() {
         try {
@@ -55,9 +56,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Populate edit fields
             editName.value = profile.display_name || '';
             editBio.value = profile.bio || '';
-            if (profile.avatar_url) {
-                avatarUpload.value = profile.avatar_url;
-            }
 
             profileLoading.style.display = 'none';
             profileContent.style.display = 'flex';
@@ -76,7 +74,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveProfileBtn.style.display = 'inline-block';
         
         avatarOverlay.style.display = 'flex';
-        avatarUpload.style.display = 'block';
     });
 
     // Save Profile
@@ -86,9 +83,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const newName = editName.value.trim();
         const newBio = editBio.value.trim();
-        const newAvatarUrl = avatarUpload.value.trim();
+        let newAvatarUrl = currentProfile.avatar_url;
 
         try {
+            if (pendingAvatarFile) {
+                saveProfileBtn.textContent = 'Uploading Image...';
+                const fileExt = pendingAvatarFile.name.split('.').pop();
+                const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
+                
+                const { error: uploadError } = await window.sbClient.storage
+                    .from('avatars')
+                    .upload(fileName, pendingAvatarFile, { upsert: true });
+
+                if (uploadError) throw uploadError;
+
+                const { data } = window.sbClient.storage
+                    .from('avatars')
+                    .getPublicUrl(fileName);
+
+                newAvatarUrl = data.publicUrl;
+            }
+
+            saveProfileBtn.textContent = 'Saving Profile...';
             const { error } = await window.sbClient
                 .from('profiles')
                 .update({
@@ -122,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             editProfileBtn.style.display = 'inline-block';
             
             avatarOverlay.style.display = 'none';
-            avatarUpload.style.display = 'none';
+            pendingAvatarFile = null;
 
         } catch (error) {
             console.error('Error saving profile:', error);
@@ -133,15 +149,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Update avatar preview dynamically as user types URL
-    avatarUpload.addEventListener('input', (e) => {
-        const url = e.target.value.trim();
-        if (url) {
-            profileImage.src = url;
-        } else {
-            const encodedName = encodeURIComponent(currentProfile?.display_name || currentProfile?.email.split('@')[0] || 'User');
-            profileImage.src = `https://ui-avatars.com/api/?name=${encodedName}&size=150&background=random`;
+    // Update avatar preview dynamically as user selects file
+    avatarUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please select a valid image file (PNG, JPG, etc.).');
+            return;
         }
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            alert('Image must be less than 2MB in size.');
+            return;
+        }
+
+        pendingAvatarFile = file;
+        profileImage.src = URL.createObjectURL(file);
     });
 
     loadProfile();
