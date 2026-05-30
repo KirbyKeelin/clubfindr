@@ -74,6 +74,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('signUpPassword').value;
             const confirm = document.getElementById('signUpConfirm').value;
 
+            if (password.length < 8) {
+                showMessage(signUpMessage, 'Password must be at least 8 characters long.', 'error');
+                return;
+            }
+            if (!/(?=.*[a-z])/.test(password)) {
+                showMessage(signUpMessage, 'Password must contain at least one lowercase letter.', 'error');
+                return;
+            }
+            if (!/(?=.*[A-Z])/.test(password)) {
+                showMessage(signUpMessage, 'Password must contain at least one uppercase letter.', 'error');
+                return;
+            }
+            if (!/(?=.*\d)/.test(password)) {
+                showMessage(signUpMessage, 'Password must contain at least one number.', 'error');
+                return;
+            }
+            if (!/(?=.*[^a-zA-Z0-9])/.test(password)) {
+                showMessage(signUpMessage, 'Password must contain at least one special character.', 'error');
+                return;
+            }
+
             if (password !== confirm) {
                 showMessage(signUpMessage, 'Passwords do not match.', 'error');
                 return;

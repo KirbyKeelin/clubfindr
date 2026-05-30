@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             if (pendingAvatarFile) {
                 saveProfileBtn.textContent = 'Uploading Image...';
-                const fileExt = pendingAvatarFile.name.split('.').pop();
+                const fileExt = pendingAvatarFile.name ? pendingAvatarFile.name.split('.').pop() : 'jpg';
                 const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
                 
                 const { error: uploadError } = await window.sbClient.storage
@@ -149,6 +149,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    const cropModal = document.getElementById('cropModal');
+    const cropImage = document.getElementById('cropImage');
+    const cancelCropBtn = document.getElementById('cancelCropBtn');
+    const saveCropBtn = document.getElementById('saveCropBtn');
+    let cropper = null;
+
     // Update avatar preview dynamically as user selects file
     avatarUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -159,13 +165,47 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit
-            alert('Image must be less than 2MB in size.');
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            alert('Image must be less than 5MB in size.');
             return;
         }
 
-        pendingAvatarFile = file;
-        profileImage.src = URL.createObjectURL(file);
+        cropImage.src = URL.createObjectURL(file);
+        cropModal.style.display = 'flex';
+        
+        if (cropper) cropper.destroy();
+        
+        // Timeout to allow modal to display before cropper initializes
+        setTimeout(() => {
+            cropper = new Cropper(cropImage, {
+                aspectRatio: 1,
+                viewMode: 1
+            });
+        }, 100);
+        
+        e.target.value = '';
+    });
+
+    cancelCropBtn.addEventListener('click', () => {
+        cropModal.style.display = 'none';
+        if (cropper) cropper.destroy();
+    });
+
+    saveCropBtn.addEventListener('click', () => {
+        if (!cropper) return;
+        cropper.getCroppedCanvas({
+            width: 300,
+            height: 300
+        }).toBlob((blob) => {
+            if (!blob) {
+                alert('Crop failed.');
+                return;
+            }
+            pendingAvatarFile = blob;
+            profileImage.src = URL.createObjectURL(blob);
+            cropModal.style.display = 'none';
+            cropper.destroy();
+        }, 'image/jpeg', 0.9);
     });
 
     loadProfile();

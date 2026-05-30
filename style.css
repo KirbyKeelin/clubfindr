@@ -125,7 +125,41 @@ main {
     }
 
     .sidebar-right {
-        display: none;
+        position: fixed;
+        top: 0;
+        right: -280px;
+        width: 260px;
+        height: 100vh;
+        z-index: 1000;
+        transition: right 0.3s ease;
+        overflow-y: auto;
+        display: block;
+    }
+
+    .sidebar-right.mobile-open {
+        right: 0;
+    }
+
+    .mobile-filter-btn {
+        display: block;
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        z-index: 999;
+        background: #1f2937;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        width: 40px;
+        height: 40px;
+        font-size: 22px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        line-height: 1;
+    }
+
+    .mobile-filter-btn:hover {
+        background: #374151;
     }
 
     main {
@@ -254,7 +288,7 @@ main {
 
     .club-top-nav {
         overflow-x: auto;
-        padding: 15px;
+        padding: 15px 15px 15px 60px;
     }
 }
 
@@ -649,17 +683,17 @@ input:checked+.slider:before {
 
 /* Super Basic Dark Mode Class (Applies to body) */
 body.dark-mode {
-    background: #111827 !important;
+    background: #0B0F19 !important;
     color: #f3f4f6;
 }
 
 body.dark-mode .profile-main,
 body.dark-mode .settings-main {
-    background: #111827;
+    background: #0B0F19;
 }
 
 body.dark-mode .sidebar-left {
-    background: #0f172a;
+    background: #111827;
 }
 
 body.dark-mode .sidebar-right,
@@ -668,7 +702,7 @@ body.dark-mode .club-card,
 body.dark-mode .profile-container,
 body.dark-mode .settings-card,
 body.dark-mode .auth-card {
-    background: #1f2937;
+    background: #1F2937;
     border-color: #374151;
     color: #f3f4f6;
 }
@@ -740,12 +774,14 @@ body.dark-mode .btn-primary {
     font-size: 20px;
     color: #1f2937;
     margin-bottom: 4px;
+    text-align: center;
 }
 
 .auth-subtitle {
     font-size: 14px;
     color: #777;
     margin-bottom: 24px;
+    text-align: center;
 }
 
 /* Message (error / success) */
@@ -776,6 +812,7 @@ body.dark-mode .btn-primary {
     background: #f0fdf4;
     color: #15803d;
     border: 1px solid #bbf7d0;
+    text-align: center;
 }
 
 /* Auth form uses existing .form-group styles, just override max-width */

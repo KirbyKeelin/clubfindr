@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>User Profile</title>
+    <title>User Profile — Club Finder</title>
     <link rel="stylesheet" href="style.css" />
-</head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
 
 <body>
     <div class="club-layout">
@@ -83,7 +83,22 @@
 
     </div>
 
+    <!-- Crop Modal -->
+    <div id="cropModal" class="mobile-overlay" style="display:none; align-items:center; justify-content:center; z-index: 2000; position: fixed;">
+        <div style="background: white; padding: 20px; border-radius: 12px; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
+            <h3 style="margin-bottom: 15px;">Crop Profile Picture</h3>
+            <div style="max-height: 60vh; max-width: 500px; overflow: hidden; display: flex; justify-content: center; align-items: center; background: #f0f0f0;">
+                <img id="cropImage" src="" style="max-width: 100%; display: block;">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                <button id="cancelCropBtn" class="btn-primary" style="background:#f1f2f6; border-color:#ddd;">Cancel</button>
+                <button id="saveCropBtn" class="btn-primary" style="background:#1f2937; color:white;">Crop & Save</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="auth.js"></script>
     <script src="profile.js"></script>

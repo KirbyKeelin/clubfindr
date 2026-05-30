@@ -89,4 +89,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyFilters();
         });
     });
+
+    const mobileFilterBtn = document.getElementById('mobileFilterBtn');
+    const sidebarRight = document.querySelector('.sidebar-right');
+    
+    if (mobileFilterBtn && sidebarRight) {
+        mobileFilterBtn.addEventListener('click', () => {
+            sidebarRight.classList.toggle('mobile-open');
+        });
+    }
 });

@@ -21,8 +21,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const { data: members } = await window.sbClient.from('club_members').select('role, joined_at, profiles(id, display_name, email, avatar_url)').eq('club_id', clubId);
         const { data: events } = await window.sbClient.from('events').select('*').eq('club_id', clubId).order('start_time', { ascending: true });
-        const { data: messages } = await window.sbClient.from('messages').select('*, profiles(display_name, avatar_url)').eq('club_id', clubId).order('created_at', { ascending: true }).limit(100);
-
         club = {
             ...clubData,
             members: (members || []).map(m => ({
@@ -32,14 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 role: m.role,
                 userId: m.profiles.id
             })),
-            events: events || [],
-            messages: (messages || []).map(m => ({
-                id: m.id,
-                author: m.profiles.display_name,
-                avatar: m.profiles.avatar_url,
-                text: m.content,
-                time: m.created_at
-            }))
+            events: events || []
         };
     } catch (err) {
         console.error(err);
@@ -56,8 +47,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let calendarDate = new Date();
 
-    // Realtime subscription reference
-    let realtimeChannel = null;
 
     function isJoined() {
         if (!currentUser || !club.members) return false;
@@ -95,7 +84,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     /* ====== MAIN TAB ====== */
     function renderMain() {
-        stopRealtime();
         const joined = isJoined();
         contentArea.innerHTML = `
             <div class="tab-main">
@@ -130,7 +118,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     /* ====== CALENDAR TAB ====== */
     function renderCalendar() {
-        stopRealtime();
         const year = calendarDate.getFullYear();
         const month = calendarDate.getMonth();
         const monthName = calendarDate.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -180,7 +167,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     /* ====== MEMBERS TAB ====== */
     function renderMembers() {
-        stopRealtime();
         const leaders = club.members.filter(m => m.role === 'owner' || m.role === 'leader' || m.role === 'faculty');
         const members = club.members.filter(m => m.role === 'club_member');
 
@@ -202,127 +188,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
     }
 
-    /* ====== CHAT TAB (with Realtime) ====== */
-    function renderChat() {
-        stopRealtime();
-        const user = currentUser;
-        const initials = user ? user.displayName.split(' ').map(w => w[0]).join('') : '?';
-
-        let msgsHtml = '';
-        (club.messages || []).forEach(m => {
-            msgsHtml += buildMessageHtml(m);
-        });
-
-        contentArea.innerHTML = `
-            <div class="tab-chat">
-                <div class="chat-composer">
-                    <div class="chat-composer-avatar">${initials}</div>
-                    <input type="text" class="chat-composer-input" id="chatInput" placeholder="Write something..." maxlength="500">
-                    <button class="btn-primary chat-send-btn" id="chatSend">Post</button>
-                </div>
-                <div class="chat-stream" id="chatStream">${msgsHtml}</div>
-            </div>
-        `;
-
-        const chatInput = document.getElementById('chatInput');
-        const chatSend = document.getElementById('chatSend');
-        const chatStream = document.getElementById('chatStream');
-
-        async function sendMessage() {
-            const text = chatInput.value.trim();
-            if (!text || !user) return;
-            chatInput.value = '';
-
-            const { data: msgData, error } = await window.sbClient
-                .from('messages')
-                .insert({ club_id: clubId, author_id: user.id, content: text })
-                .select('*, profiles(display_name, avatar_url)')
-                .single();
-
-            if (!error && msgData) {
-                const msg = {
-                    id: msgData.id,
-                    author: msgData.profiles.display_name,
-                    avatar: msgData.profiles.avatar_url,
-                    text: msgData.content,
-                    time: msgData.created_at
-                };
-                if (!document.getElementById('msg-' + msg.id)) {
-                    appendMessage(chatStream, msg);
-                }
-            }
+    /* ====== SOCIALS TAB ====== */
+    function renderSocials() {
+        const socials = club.socials || {};
+        let html = '<div class="tab-socials" style="padding: 30px;">';
+        if (Object.keys(socials).length === 0) {
+            html += '<p>No social links provided.</p>';
+        } else {
+            html += '<ul style="list-style: none; padding: 0;">';
+            if (socials.instagram) html += `<li style="margin-bottom:15px;"><a href="${esc(socials.instagram)}" target="_blank" style="color:#1f2937; font-size:18px; font-weight:bold; text-decoration:none;">📷 Instagram</a></li>`;
+            if (socials.twitter) html += `<li style="margin-bottom:15px;"><a href="${esc(socials.twitter)}" target="_blank" style="color:#1f2937; font-size:18px; font-weight:bold; text-decoration:none;">🐦 Twitter</a></li>`;
+            if (socials.website) html += `<li style="margin-bottom:15px;"><a href="${esc(socials.website)}" target="_blank" style="color:#1f2937; font-size:18px; font-weight:bold; text-decoration:none;">🌐 Website</a></li>`;
+            html += '</ul>';
         }
-
-        chatSend.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
-        chatStream.scrollTop = chatStream.scrollHeight;
-
-        // Start realtime subscription
-        startRealtime(chatStream);
-    }
-
-    function buildMessageHtml(m) {
-        const avatarSrc = m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.author)}&background=1f2937&color=fff`;
-        return `
-            <div class="chat-message" id="msg-${m.id}">
-                <img src="${avatarSrc}" class="chat-avatar" alt="${esc(m.author)}">
-                <div class="chat-body">
-                    <span class="chat-author">${esc(m.author)}</span>
-                    <span class="chat-time">${formatTime(m.time)}</span>
-                    <p class="chat-text">${esc(m.text)}</p>
-                </div>
-            </div>
-        `;
-    }
-
-    function appendMessage(chatStream, msg) {
-        chatStream.innerHTML += buildMessageHtml(msg);
-        chatStream.scrollTop = chatStream.scrollHeight;
-        club.messages.push(msg);
-    }
-
-    /* ====== SUPABASE REALTIME ====== */
-    function startRealtime(chatStream) {
-        realtimeChannel = window.sbClient
-            .channel('club-chat-' + clubId)
-            .on('postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'messages', filter: 'club_id=eq.' + clubId },
-                async (payload) => {
-                    const newMsg = payload.new;
-                    // Skip if we already have this message
-                    if (document.getElementById('msg-' + newMsg.id)) return;
-
-                    // Fetch author info
-                    const { data: profile } = await window.sbClient
-                        .from('profiles')
-                        .select('display_name, avatar_url')
-                        .eq('id', newMsg.author_id)
-                        .single();
-
-                    const msg = {
-                        id: newMsg.id,
-                        author: profile?.display_name || 'Unknown',
-                        avatar: profile?.avatar_url,
-                        text: newMsg.content,
-                        time: newMsg.created_at
-                    };
-
-                    appendMessage(chatStream, msg);
-                }
-            )
-            .subscribe();
-    }
-
-    function stopRealtime() {
-        if (realtimeChannel) {
-            window.sbClient.removeChannel(realtimeChannel);
-            realtimeChannel = null;
-        }
+        html += '</div>';
+        contentArea.innerHTML = html;
     }
 
     /* ====== CONTACT INFO TAB ====== */
     function renderContactInfo() {
-        stopRealtime();
         const contacts = club.members.filter(m => m.role === 'leader' || m.role === 'moderator');
         let html = '<div class="tab-contact">';
         if (contacts.length === 0) {
@@ -346,8 +230,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /* ====== TAB SWITCHING ====== */
-    const tabs = ['Main', 'Calendar', 'Members', 'Chat', 'Contact Info'];
-    const renderers = [renderMain, renderCalendar, renderMembers, renderChat, renderContactInfo];
+    const tabs = ['Main', 'Calendar', 'Members', 'Contact Info', 'Socials'];
+    const renderers = [renderMain, renderCalendar, renderMembers, renderContactInfo, renderSocials];
 
     buttons.forEach((btn, i) => {
         btn.addEventListener('click', () => {
