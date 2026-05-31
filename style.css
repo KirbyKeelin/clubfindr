@@ -1643,6 +1643,7 @@ body.dark-mode .club-top-nav button.active {
     padding: 60px 20px;
     font-size: 16px;
     color: #888;
+    grid-column: 1 / -1;
 }
 
 .error-text {

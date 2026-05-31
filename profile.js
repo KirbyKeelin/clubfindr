@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 const { error: uploadError } = await window.sbClient.storage
                     .from('avatars')
-                    .upload(fileName, pendingAvatarFile, { upsert: true });
+                    .upload(fileName, pendingAvatarFile, { upsert: true, contentType: pendingAvatarFile.type || 'image/jpeg' });
 
                 if (uploadError) throw uploadError;
 
@@ -202,8 +202,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 alert('Crop failed.');
                 return;
             }
-            pendingAvatarFile = blob;
-            profileImage.src = URL.createObjectURL(blob);
+            // Convert blob to File object to ensure compatibility with Supabase storage
+            const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+            pendingAvatarFile = file;
+            profileImage.src = URL.createObjectURL(file);
             cropModal.style.display = 'none';
             cropper.destroy();
         }, 'image/jpeg', 0.9);
