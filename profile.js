@@ -142,7 +142,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } catch (error) {
             console.error('Error saving profile:', error);
-            alert('Failed to save profile: ' + error.message);
+            const msg = error.message || error.error_description || JSON.stringify(error);
+            alert('Failed to save profile. ' + msg + '\nIf uploading a picture failed, ensure your avatars bucket is public and has INSERT policies configured.');
         } finally {
             saveProfileBtn.textContent = 'Save Changes';
             saveProfileBtn.disabled = false;

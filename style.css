@@ -1,3 +1,8 @@
+/* RESET & GLOBAL */
+html::-webkit-scrollbar {
+    display: none;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -60,7 +65,7 @@ main {
     gap: 20px;
 
     /* AUTO RESPONSIVE GRID */
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
 
 /* CLUB CARD */
@@ -499,17 +504,23 @@ main {
     font-size: 14px;
 }
 
-.form-group input {
+.form-group input,
+.form-group textarea,
+.form-group select {
     width: 100%;
-    max-width: 400px;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 10px 12px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 15px;
     transition: border-color 0.2s ease;
+    font-family: inherit;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
     outline: none;
     border-color: #1f2937;
 }
@@ -1561,7 +1572,8 @@ body.dark-mode .cal-nav:hover {
 
 .support-textarea {
     width: 100%;
-    max-width: 400px;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 10px 12px;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -1610,6 +1622,16 @@ body.dark-mode .auth-form h3 {
 
 body.dark-mode .auth-container {
     background: #121212;
+}
+
+body.dark-mode .club-top-nav button {
+    color: #9CA3AF;
+}
+
+body.dark-mode .club-top-nav button:hover,
+body.dark-mode .club-top-nav button.active {
+    color: #FFFFFF;
+    border-bottom-color: #FFFFFF;
 }
 
 /* ================================================
