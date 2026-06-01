@@ -144,14 +144,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                             user_id: club.created_by,
                             title: title,
                             message: message,
-                            club_name: club.name
+                            club_name: club.name,
+                            link: 'club.html?id=' + id
                         });
                         
-                        if (status === 'rejected' && club.profiles?.email) {
+                        if (club.profiles?.email) {
                             try {
-                                await window.sbClient.functions.invoke('send-event-review', {
-                                    body: { type: 'rejection', email: club.profiles.email, title: `Club Creation: ${club.name}`, reason }
-                                });
+                                if (status === 'rejected') {
+                                    await window.sbClient.functions.invoke('send-event-review', {
+                                        body: { type: 'rejection', email: club.profiles.email, title: `Club Creation: ${club.name}`, reason }
+                                    });
+                                } else if (status === 'approved') {
+                                    await window.sbClient.functions.invoke('send-event-review', {
+                                        body: { type: 'approval', email: club.profiles.email, title: `Club Creation: ${club.name}` }
+                                    });
+                                }
                             } catch(e) {}
                         }
                     }
@@ -238,7 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!error) {
                     const { data: members } = await window.sbClient.from('club_members').select('user_id, profiles(email)')
                         .eq('club_id', clubId)
-                        .in('role', ['owner', 'leader']);
+                        .in('role', ['owner', 'leader', 'faculty']);
                     
                     if (members && members.length > 0) {
                         const title = status === 'approved' ? 'New Event Posted!' : 'Event Request Rejected';
@@ -366,7 +373,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Notify club members
                     const { data: members } = await window.sbClient.from('club_members').select('user_id, profiles(email)')
                         .eq('club_id', clubId)
-                        .in('role', ['owner', 'leader']);
+                        .in('role', ['owner', 'leader', 'faculty']);
                     if (members && members.length > 0) {
                         const notifTitle = status === 'approved' ? 'Social Link Approved!' : 'Social Link Rejected';
                         const notifMessage = status === 'approved'
