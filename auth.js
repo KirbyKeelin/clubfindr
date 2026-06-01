@@ -260,7 +260,7 @@ if (localStorage.getItem('darkMode') === 'enabled') {
                     body.dark-mode .notif-item.unread { background: #1e3a8a; }
                     .notif-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
                     .notif-msg { font-size: 13px; color: #555; }
-                    body.dark-mode .notif-msg { color: #9ca3af; }
+                    body.dark-mode .notif-msg { color: #d1d5db; }
                     .mark-all-btn { font-size: 12px; color: #3b82f6; cursor: pointer; border:none; background:none; }
                 </style>
                 <button id="notif-bell-btn">
