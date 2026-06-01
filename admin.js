@@ -402,7 +402,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 }
                             }
                         } catch(e) {}
-                        }
                     }
                     
                     socialsList.innerHTML = '';
