@@ -261,7 +261,7 @@ if (localStorage.getItem('darkMode') === 'enabled') {
                     .notif-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
                     body.dark-mode .notif-title { color: #f9fafb; }
                     .notif-msg { font-size: 13px; color: #555; }
-                    body.dark-mode .notif-msg { color: #d1d5db; }
+                    body.dark-mode .notif-msg { color: #f3f4f6; }
                     .mark-all-btn { font-size: 12px; color: #3b82f6; cursor: pointer; border:none; background:none; }
                     /* Scrollbar for dropdown */
                     #notif-dropdown::-webkit-scrollbar { width: 8px; }

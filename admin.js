@@ -169,8 +169,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             ${ev.end_time ? `<p style="margin: 5px 0;"><strong>End:</strong> ${new Date(ev.end_time).toLocaleString()}</p>` : ''}
                         </div>
                         <div style="display:flex; flex-direction:column; gap:10px; min-width:120px;">
-                            <button onclick="handleEventDecision('${ev.id}', 'approve', '${ev.club_id}')" class="btn-primary" style="background:#10b981; border:none;">Approve</button>
-                            <button onclick="handleEventDecision('${ev.id}', 'reject', '${ev.club_id}')" class="btn-primary" style="background:#ef4444; border:none;">Reject</button>
+                            <button data-title="${ev.title.replace(/"/g, '&quot;')}" data-club="${(ev.clubs?.name || 'Unknown').replace(/"/g, '&quot;')}" onclick="handleEventDecision('${ev.id}', 'approve', '${ev.club_id}', this)" class="btn-primary" style="background:#10b981; border:none;">Approve</button>
+                            <button data-title="${ev.title.replace(/"/g, '&quot;')}" data-club="${(ev.clubs?.name || 'Unknown').replace(/"/g, '&quot;')}" onclick="handleEventDecision('${ev.id}', 'reject', '${ev.club_id}', this)" class="btn-primary" style="background:#ef4444; border:none;">Reject</button>
                         </div>
                     </div>
                 </div>
@@ -182,7 +182,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    window.handleEventDecision = async (id, action, clubId) => {
+    window.handleEventDecision = async (id, action, clubId, btn) => {
+        const titleText = btn.getAttribute('data-title');
+        const clubNameText = btn.getAttribute('data-club');
+
         promptForReason(action, async (reason) => {
             try {
                 const status = action === 'approve' ? 'approved' : 'rejected';
@@ -193,13 +196,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (!error) {
                     const { data: members } = await window.sbClient.from('club_members').select('user_id').eq('club_id', clubId);
-                    const { data: event } = await window.sbClient.from('events').select('title, clubs(name)').eq('id', id).single();
                     
-                    if (members && members.length > 0 && event) {
+                    if (members && members.length > 0) {
                         const title = status === 'approved' ? 'New Event Posted!' : 'Event Request Rejected';
                         const message = status === 'approved'
-                            ? `The event "${event.title}" has been approved and posted to ${event.clubs.name}'s calendar.`
-                            : `Your event request for "${event.title}" in ${event.clubs.name} has been rejected. Reason: ${reason || 'None provided.'}`;
+                            ? `The event "${titleText}" has been approved and posted to ${clubNameText}'s calendar.`
+                            : `Your event request for "${titleText}" in ${clubNameText} has been rejected. Reason: ${reason || 'None provided.'}`;
                             
                         const notifications = members.map(m => ({
                             user_id: m.user_id,
@@ -256,8 +258,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <p style="margin: 5px 0;"><strong>URL:</strong> <a href="${soc.url}" target="_blank">${soc.url}</a></p>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:10px; min-width:120px;">
-                            <button onclick="handleSocialDecision('${soc.id}', 'approve', '${soc.clubs?.id}', '${soc.title}', '${soc.url}')" class="btn-primary" style="background:#10b981; border:none;">Approve</button>
-                            <button onclick="handleSocialDecision('${soc.id}', 'reject')" class="btn-primary" style="background:#ef4444; border:none;">Reject</button>
+                            <button data-title="${soc.title.replace(/"/g, '&quot;')}" data-club="${(soc.clubs?.name || 'Unknown').replace(/"/g, '&quot;')}" data-url="${soc.url.replace(/"/g, '&quot;')}" onclick="handleSocialDecision('${soc.id}', 'approve', '${soc.clubs?.id}', this)" class="btn-primary" style="background:#10b981; border:none;">Approve</button>
+                            <button data-title="${soc.title.replace(/"/g, '&quot;')}" data-club="${(soc.clubs?.name || 'Unknown').replace(/"/g, '&quot;')}" data-url="${soc.url.replace(/"/g, '&quot;')}" onclick="handleSocialDecision('${soc.id}', 'reject', '${soc.clubs?.id}', this)" class="btn-primary" style="background:#ef4444; border:none;">Reject</button>
                         </div>
                     </div>
                 </div>
@@ -269,7 +271,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    window.handleSocialDecision = async (id, action, clubId, title, url) => {
+    window.handleSocialDecision = async (id, action, clubId, btn) => {
+        const titleText = btn.getAttribute('data-title');
+        const clubNameText = btn.getAttribute('data-club');
+        const urlText = btn.getAttribute('data-url');
+
         promptForReason(action, async (reason) => {
             try {
                 const status = action === 'approve' ? 'approved' : 'rejected';
@@ -283,20 +289,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const { data: clubData } = await window.sbClient.from('clubs').select('socials').eq('id', clubId).single();
                         if (clubData) {
                             const currentSocials = clubData.socials || {};
-                            const platformKey = title.toLowerCase().replace(/[^a-z0-9]/g, '');
-                            currentSocials[platformKey] = url;
+                            const platformKey = titleText.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            currentSocials[platformKey] = urlText;
                             await window.sbClient.from('clubs').update({ socials: currentSocials }).eq('id', clubId);
                         }
                     }
                     
                     // Notify club members
                     const { data: members } = await window.sbClient.from('club_members').select('user_id').eq('club_id', clubId);
-                    const { data: club } = await window.sbClient.from('clubs').select('name').eq('id', clubId).single();
-                    if (members && members.length > 0 && club) {
+                    if (members && members.length > 0) {
                         const notifTitle = status === 'approved' ? 'Social Link Approved!' : 'Social Link Rejected';
                         const notifMessage = status === 'approved'
-                            ? `The social link "${title}" has been approved and added to ${club.name}.`
-                            : `Your social link request for "${title}" in ${club.name} has been rejected. Reason: ${reason || 'None provided.'}`;
+                            ? `The social link "${titleText}" has been approved and added to ${clubNameText}.`
+                            : `Your social link request for "${titleText}" in ${clubNameText} has been rejected. Reason: ${reason || 'None provided.'}`;
                             
                         const notifications = members.map(m => ({
                             user_id: m.user_id,
