@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const card = document.createElement('div');
             card.classList.add('club-card');
             card.innerHTML = `
-                <img src="${club.image_url || 'https://picsum.photos/400/200?random=' + club.id}" alt="${club.name}">
+                <img src="${club.banner_url || club.image_url || 'https://picsum.photos/400/200?random=' + club.id}" alt="${club.name}">
                 <div class="club-content">
                     <h4>${club.name}</h4>
                     <p>${club.description}</p>
