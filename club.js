@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         applyCropBtn.textContent = 'Apply & Upload';
                         return;
                     }
-                    const fileName = \`banner-\${clubId}-\${Date.now()}.jpg\`;
+                    const fileName = `banner-${clubId}-${Date.now()}.jpg`;
                     const { data, error } = await window.sbClient.storage
                         .from('banners')
                         .upload(fileName, blob, { contentType: 'image/jpeg' });
