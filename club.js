@@ -343,9 +343,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             html += '<p>No social links provided.</p>';
         } else {
             html += '<ul style="list-style: none; padding: 0;">';
-            if (socials.instagram) html += `<li style="margin-bottom:15px;"><a href="${esc(socials.instagram)}" target="_blank" style="color:#1f2937; font-size:18px; font-weight:bold; text-decoration:none;">📷 Instagram</a></li>`;
-            if (socials.twitter) html += `<li style="margin-bottom:15px;"><a href="${esc(socials.twitter)}" target="_blank" style="color:#1f2937; font-size:18px; font-weight:bold; text-decoration:none;">🐦 Twitter</a></li>`;
-            if (socials.website) html += `<li style="margin-bottom:15px;"><a href="${esc(socials.website)}" target="_blank" style="color:#1f2937; font-size:18px; font-weight:bold; text-decoration:none;">🌐 Website</a></li>`;
+            for (const [key, url] of Object.entries(socials)) {
+                let icon = '🔗';
+                if (key.includes('insta')) icon = '📷';
+                else if (key.includes('twitter') || key.includes('x')) icon = '🐦';
+                else if (key.includes('discord')) icon = '🎮';
+                else if (key.includes('youtube')) icon = '▶️';
+                else if (key.includes('web')) icon = '🌐';
+                
+                const title = key.charAt(0).toUpperCase() + key.slice(1);
+                html += `<li style="margin-bottom:15px;"><a href="${esc(url)}" target="_blank" style="color:#1f2937; font-size:18px; font-weight:bold; text-decoration:none;">${icon} ${title}</a></li>`;
+            }
             html += '</ul>';
         }
         html += '</div>';
@@ -394,6 +402,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <input type="hidden" id="editBannerUrl" value="${esc(club.banner_url || '')}">
                     </div>
                     <button class="btn-primary" id="saveInfoBtn">Save Info</button>
+                </div>
+
+                <div class="settings-card" style="margin-bottom: 20px;">
+                    <h4>Manage Current Socials</h4>
+                    <div id="manageSocialsList"></div>
                 </div>
 
                 <div class="settings-card" style="margin-bottom: 20px;">
@@ -512,6 +525,49 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (bannerImg) bannerImg.src = club.banner_url || 'https://picsum.photos/1200/400?random=10';
                 window.showToast('Club info updated!', 'success');
             });
+
+            const renderManageSocials = () => {
+                const listDiv = document.getElementById('manageSocialsList');
+                if (!listDiv) return;
+                const socials = club.socials || {};
+                if (Object.keys(socials).length === 0) {
+                    listDiv.innerHTML = '<p style="font-size:14px; color:#777;">No social links added yet.</p>';
+                    return;
+                }
+                let html = '<ul style="list-style:none; padding:0; margin:0;">';
+                for (const [key, url] of Object.entries(socials)) {
+                    html += `
+                        <li style="display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid #eee; margin-bottom:10px; border-radius:5px;">
+                            <div>
+                                <strong style="text-transform:capitalize;">${esc(key)}</strong><br>
+                                <a href="${esc(url)}" target="_blank" style="font-size:12px; color:#3b82f6;">${esc(url)}</a>
+                            </div>
+                            <button class="delete-social-btn" data-key="${esc(key)}" style="background:#ef4444; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Delete</button>
+                        </li>
+                    `;
+                }
+                html += '</ul>';
+                listDiv.innerHTML = html;
+                
+                listDiv.querySelectorAll('.delete-social-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const keyToDelete = e.target.getAttribute('data-key');
+                        if (confirm(`Delete ${keyToDelete}?`)) {
+                            const currentSocials = { ...club.socials };
+                            delete currentSocials[keyToDelete];
+                            const { error } = await window.sbClient.from('clubs').update({ socials: currentSocials }).eq('id', clubId);
+                            if (error) {
+                                window.showToast('Failed to delete social link.', 'error');
+                            } else {
+                                club.socials = currentSocials;
+                                window.showToast('Social link deleted!', 'success');
+                                renderManageSocials();
+                            }
+                        }
+                    });
+                });
+            };
+            renderManageSocials();
 
             document.getElementById('reqSocialBtn').addEventListener('click', async () => {
                 const title = document.getElementById('socialTitle').value.trim();
