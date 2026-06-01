@@ -19,16 +19,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { data: clubData, error: clubErr } = await window.sbClient.from('clubs').select('*').eq('id', clubId).single();
         if (clubErr) throw clubErr;
 
-        const { data: members } = await window.sbClient.from('club_members').select('role, joined_at, profiles(id, display_name, email, avatar_url)').eq('club_id', clubId);
+        const { data: members } = await window.sbClient.from('club_members').select('user_id, role, joined_at, profiles(id, display_name, email, avatar_url)').eq('club_id', clubId);
         const { data: events } = await window.sbClient.from('events').select('*').eq('club_id', clubId).order('start_time', { ascending: true });
         club = {
             ...clubData,
             members: (members || []).map(m => ({
                 name: m.profiles.display_name,
                 email: m.profiles.email,
-                avatar: m.profiles.avatar_url,
+                avatar: m.profiles?.avatar_url,
                 role: m.role,
-                userId: m.profiles.id
+                userId: m.user_id
             })),
             events: events || []
         };
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const manageBtn = document.getElementById('manageTabBtn');
     if (currentUser && club.members) {
         const myMember = club.members.find(m => m.userId === currentUser.id);
-        if (myMember && ['owner', 'leader', 'faculty'].includes(myMember.role)) {
+        if (myMember && myMember.role && ['owner', 'leader', 'faculty'].includes(myMember.role.toLowerCase())) {
             if (manageBtn) manageBtn.style.display = 'inline-block';
         }
     }
