@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
-            window.showToast('Please select a valid image file (PNG, JPG, etc., 'error').');
+            window.showToast('Please select a valid image file (PNG, JPG, etc.).', 'error');
             return;
         }
 

@@ -281,9 +281,20 @@ if (localStorage.getItem('darkMode') === 'enabled') {
                     body.dark-mode .notif-item.unread { background: #1e3a8a; }
                     .notif-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
                     body.dark-mode .notif-title { color: #f9fafb; }
-                    .notif-msg { font-size: 13px; color: #555; }
+                    .notif-msg { font-size: 13px; color: #555; margin-bottom: 8px; }
                     body.dark-mode .notif-msg { color: #f3f4f6; }
-                    .mark-all-btn { font-size: 12px; color: #3b82f6; cursor: pointer; border:none; background:none; }
+                    .notif-footer { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #888; }
+                    body.dark-mode .notif-footer { color: #aaa; }
+                    .notif-club { font-weight: bold; color: #3b82f6; }
+                    body.dark-mode .notif-club { color: #60a5fa; }
+                    .notif-actions { display: flex; gap: 8px; }
+                    .notif-action-btn { background: none; border: none; font-size: 11px; cursor: pointer; color: #888; padding: 2px 4px; border-radius: 4px; }
+                    .notif-action-btn:hover { background: #eee; color: #333; }
+                    body.dark-mode .notif-action-btn:hover { background: #374151; color: #fff; }
+                    .notif-action-btn.delete-btn:hover { color: #ef4444; }
+                    .mark-all-btn { font-size: 12px; color: #3b82f6; cursor: pointer; border:none; background:none; margin-left: 10px; }
+                    .clear-all-btn { font-size: 12px; color: #ef4444; cursor: pointer; border:none; background:none; }
+                    .header-actions { display: flex; gap: 5px; }
                     /* Scrollbar for dropdown */
                     #notif-dropdown::-webkit-scrollbar { width: 8px; }
                     #notif-dropdown::-webkit-scrollbar-track { background: transparent; }
@@ -297,7 +308,10 @@ if (localStorage.getItem('darkMode') === 'enabled') {
                 <div id="notif-dropdown">
                     <div class="notif-header">
                         <span>Notifications</span>
-                        <button class="mark-all-btn" id="notif-mark-read">Mark all read</button>
+                        <div class="header-actions">
+                            <button class="mark-all-btn" id="notif-mark-read">Mark Read</button>
+                            <button class="clear-all-btn" id="notif-clear-all">Clear All</button>
+                        </div>
                     </div>
                     <div id="notif-list"></div>
                 </div>
@@ -309,8 +323,27 @@ if (localStorage.getItem('darkMode') === 'enabled') {
             const badge = document.getElementById('notif-badge');
             const list = document.getElementById('notif-list');
             const markAllBtn = document.getElementById('notif-mark-read');
+            const clearAllBtn = document.getElementById('notif-clear-all');
 
             let unreadIds = [];
+
+            // Helper for relative time
+            function timeAgo(dateInput) {
+                const date = new Date(dateInput);
+                const now = new Date();
+                const seconds = Math.round((now - date) / 1000);
+                const minutes = Math.round(seconds / 60);
+                const hours = Math.round(minutes / 60);
+                const days = Math.round(hours / 24);
+
+                if (seconds < 60) return 'Just now';
+                if (minutes === 1) return '1 min ago';
+                if (minutes < 60) return minutes + ' mins ago';
+                if (hours === 1) return '1 hour ago';
+                if (hours < 24) return hours + ' hours ago';
+                if (days === 1) return '1 day ago';
+                return days + ' days ago';
+            }
 
             bellBtn.addEventListener('click', () => {
                 dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
@@ -324,6 +357,25 @@ if (localStorage.getItem('darkMode') === 'enabled') {
                 await window.sbClient.from('notifications').update({is_read: true}).in('id', unreadIds);
                 await fetchNotifications();
             });
+
+            clearAllBtn.addEventListener('click', async () => {
+                const user = await getCurrentUser();
+                if(!user) return;
+                if(confirm('Are you sure you want to delete all notifications?')) {
+                    await window.sbClient.from('notifications').delete().eq('user_id', user.id);
+                    await fetchNotifications();
+                }
+            });
+
+            window.markNotifRead = async function(id) {
+                await window.sbClient.from('notifications').update({is_read: true}).eq('id', id);
+                await fetchNotifications();
+            };
+
+            window.deleteNotif = async function(id) {
+                await window.sbClient.from('notifications').delete().eq('id', id);
+                await fetchNotifications();
+            };
 
             async function fetchNotifications() {
                 try {
@@ -355,6 +407,16 @@ if (localStorage.getItem('darkMode') === 'enabled') {
                                 <div class="notif-item ${n.is_read ? '' : 'unread'}">
                                     <div class="notif-title">${n.title}</div>
                                     <div class="notif-msg">${n.message}</div>
+                                    <div class="notif-footer">
+                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                            ${n.club_name ? `<span class="notif-club">${n.club_name}</span>` : ''}
+                                            <span class="notif-time">${timeAgo(n.created_at)}</span>
+                                        </div>
+                                        <div class="notif-actions">
+                                            ${!n.is_read ? `<button class="notif-action-btn" onclick="window.markNotifRead('${n.id}')">Mark Read</button>` : ''}
+                                            <button class="notif-action-btn delete-btn" onclick="window.deleteNotif('${n.id}')">✕</button>
+                                        </div>
+                                    </div>
                                 </div>
                             `).join('');
                         }

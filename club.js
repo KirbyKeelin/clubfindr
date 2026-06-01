@@ -148,7 +148,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             let evHtml = '';
             dayEvents.forEach(ev => {
-                evHtml += `<div class="cal-event" style="background:${ev.color || '#3b82f6'}">${esc(ev.title)}</div>`;
+                const evJson = JSON.stringify(ev).replace(/"/g, '&quot;');
+                evHtml += `<div class="cal-event" style="background:${ev.color || '#3b82f6'}; cursor:pointer;" onclick="showEventModal(${evJson})">${esc(ev.title)}</div>`;
             });
             cells += `<div class="cal-cell"><span class="cal-date">${d}</span>${evHtml}</div>`;
         }
@@ -168,10 +169,148 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${cells}
                 </div>
             </div>
+            
+            <!-- Event Modal Container -->
+            <div id="eventModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+                <div style="background:white; padding:20px; border-radius:8px; max-width:500px; width:90%;" class="dark-mode-modal">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+                        <h2 id="modalEvTitle" style="margin:0;"></h2>
+                        <button onclick="document.getElementById('eventModal').style.display='none'" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+                    </div>
+                    <p><strong>Start:</strong> <span id="modalEvStart"></span></p>
+                    <p id="modalEvEndContainer" style="display:none;"><strong>End:</strong> <span id="modalEvEnd"></span></p>
+                    <p><strong>Description:</strong></p>
+                    <p id="modalEvDesc" style="background:#f9fafb; padding:10px; border-radius:4px; font-size:14px;"></p>
+                    
+                    <div id="modalEvManageContainer" style="display:none; margin-top:20px; border-top:1px solid #ddd; padding-top:15px;">
+                        <h4 style="margin-top:0;">Manage Event</h4>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button id="modalEditBtn" class="btn-primary" style="background:#f59e0b; border:none; padding:8px 15px;">Edit Event</button>
+                            <button id="modalDeleteBtn" class="btn-primary" style="background:#ef4444; border:none; padding:8px 15px;">Delete Event</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Edit Form -->
+                    <div id="modalEvEditForm" style="display:none; margin-top:20px; border-top:1px solid #ddd; padding-top:15px;">
+                        <h4 style="margin-top:0;">Edit Event (Requires Re-Approval)</h4>
+                        <div class="form-group"><label>Title</label><input type="text" id="editEvTitle" style="width:100%; padding:8px;"></div>
+                        <div class="form-group"><label>Description</label><textarea id="editEvDesc" rows="3" style="width:100%; padding:8px;"></textarea></div>
+                        <div class="form-group"><label>Start</label><input type="datetime-local" id="editEvStart" style="width:100%; padding:8px;"></div>
+                        <div class="form-group"><label>End</label><input type="datetime-local" id="editEvEnd" style="width:100%; padding:8px;"></div>
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button id="saveEditEvBtn" class="btn-primary" style="background:#10b981; border:none;">Submit Changes</button>
+                            <button id="cancelEditEvBtn" class="btn-primary" style="background:#6b7280; border:none;">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         `;
         document.getElementById('calPrev').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(); });
         document.getElementById('calNext').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
     }
+
+    window.showEventModal = function(ev) {
+        document.getElementById('modalEvTitle').textContent = ev.title;
+        document.getElementById('modalEvStart').textContent = formatTime(ev.start_time);
+        
+        if (ev.end_time) {
+            document.getElementById('modalEvEndContainer').style.display = 'block';
+            document.getElementById('modalEvEnd').textContent = formatTime(ev.end_time);
+        } else {
+            document.getElementById('modalEvEndContainer').style.display = 'none';
+        }
+        
+        document.getElementById('modalEvDesc').textContent = ev.description || 'No description provided.';
+        
+        // Check permissions
+        let canManage = false;
+        if (currentUser) {
+            if (currentUser.isAdmin) canManage = true;
+            if (club.members) {
+                const myMember = club.members.find(m => m.userId === currentUser.id);
+                if (myMember && ['owner', 'leader', 'faculty'].includes(myMember.role?.toLowerCase())) {
+                    canManage = true;
+                }
+            }
+        }
+        
+        document.getElementById('modalEvManageContainer').style.display = canManage ? 'block' : 'none';
+        document.getElementById('modalEvEditForm').style.display = 'none';
+        
+        // Setup buttons
+        const editBtn = document.getElementById('modalEditBtn');
+        const deleteBtn = document.getElementById('modalDeleteBtn');
+        
+        // Clone to remove old listeners
+        const newEditBtn = editBtn.cloneNode(true);
+        editBtn.parentNode.replaceChild(newEditBtn, editBtn);
+        
+        const newDeleteBtn = deleteBtn.cloneNode(true);
+        deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+        
+        newDeleteBtn.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to delete this event? This cannot be undone.')) {
+                const { error } = await window.sbClient.from('events').delete().eq('id', ev.id);
+                if (error) {
+                    window.showToast('Failed to delete event: ' + error.message, 'error');
+                } else {
+                    window.showToast('Event deleted successfully.', 'success');
+                    club.events = club.events.filter(e => e.id !== ev.id);
+                    document.getElementById('eventModal').style.display = 'none';
+                    renderCalendar(); // Re-render
+                }
+            }
+        });
+        
+        newEditBtn.addEventListener('click', () => {
+            document.getElementById('modalEvManageContainer').style.display = 'none';
+            document.getElementById('modalEvEditForm').style.display = 'block';
+            
+            document.getElementById('editEvTitle').value = ev.title;
+            document.getElementById('editEvDesc').value = ev.description || '';
+            document.getElementById('editEvStart').value = ev.start_time ? ev.start_time.slice(0, 16) : '';
+            document.getElementById('editEvEnd').value = ev.end_time ? ev.end_time.slice(0, 16) : '';
+        });
+        
+        const saveEditBtn = document.getElementById('saveEditEvBtn');
+        const newSaveEditBtn = saveEditBtn.cloneNode(true);
+        saveEditBtn.parentNode.replaceChild(newSaveEditBtn, saveEditBtn);
+        
+        newSaveEditBtn.addEventListener('click', async () => {
+            const title = document.getElementById('editEvTitle').value;
+            const desc = document.getElementById('editEvDesc').value;
+            const start = document.getElementById('editEvStart').value;
+            const end = document.getElementById('editEvEnd').value;
+            
+            if(!title || !start) return window.showToast('Title and Start Time required.', 'error');
+            
+            const { error } = await window.sbClient.from('events').update({
+                title, description: desc, start_time: start, end_time: end || null, status: 'pending'
+            }).eq('id', ev.id);
+            
+            if (error) {
+                window.showToast('Failed to edit event.', 'error');
+            } else {
+                window.showToast('Event updated and sent for re-approval.', 'success');
+                club.events = club.events.filter(e => e.id !== ev.id); // Remove from calendar until approved
+                document.getElementById('eventModal').style.display = 'none';
+                renderCalendar();
+                
+                try {
+                    await window.sbClient.functions.invoke('send-event-review', {
+                        body: { clubId: club.id, title, description: desc, start }
+                    });
+                } catch(e) {}
+            }
+        });
+        
+        document.getElementById('cancelEditEvBtn').onclick = () => {
+            document.getElementById('modalEvManageContainer').style.display = 'block';
+            document.getElementById('modalEvEditForm').style.display = 'none';
+        };
+
+        document.getElementById('eventModal').style.display = 'flex';
+    };
 
     /* ====== MEMBERS TAB ====== */
     function renderMembers() {

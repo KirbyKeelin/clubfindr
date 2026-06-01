@@ -19,6 +19,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     const confirmActionBtn = document.getElementById('confirmActionBtn');
     const actionReason = document.getElementById('actionReason');
     
+    // Tab Switching
+    const navApprovals = document.getElementById('nav-approvals');
+    const navCalendar = document.getElementById('nav-calendar');
+    const approvalsTab = document.getElementById('approvalsTab');
+    const calendarTab = document.getElementById('calendarTab');
+
+    if (navApprovals && navCalendar) {
+        navApprovals.addEventListener('click', (e) => {
+            e.preventDefault();
+            navApprovals.classList.add('active');
+            navCalendar.classList.remove('active');
+            approvalsTab.style.display = 'block';
+            calendarTab.style.display = 'none';
+        });
+
+        navCalendar.addEventListener('click', (e) => {
+            e.preventDefault();
+            navCalendar.classList.add('active');
+            navApprovals.classList.remove('active');
+            approvalsTab.style.display = 'none';
+            calendarTab.style.display = 'block';
+            loadMasterCalendar();
+        });
+    }
+    
     let pendingActionCallback = null;
 
     function promptForReason(actionName, callback) {
@@ -100,7 +125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     window.handleDecision = async (id, action) => {
-        promptForReason(action, async (reason) => {
+        const processDecision = async (reason = '') => {
             try {
                 const status = action === 'approve' ? 'approved' : 'rejected';
                 const { error } = await window.sbClient
@@ -109,18 +134,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .eq('id', id);
 
                 if (!error) {
-                    const { data: club } = await window.sbClient.from('clubs').select('created_by, name').eq('id', id).single();
+                    const { data: club } = await window.sbClient.from('clubs').select('created_by, name, profiles!clubs_created_by_fkey(email)').eq('id', id).single();
                     if (club && club.created_by) {
                         const title = status === 'approved' ? 'Club Approved!' : 'Club Rejected';
-                        const message = `Your request to create the club "${club.name}" has been ${status}. Reason: ${reason || 'None provided.'}`;
+                        const message = status === 'approved' 
+                            ? `Your request to create the club "${club.name}" has been approved.` 
+                            : `Your request to create the club "${club.name}" has been rejected. Reason: ${reason || 'None provided.'}`;
                         await window.sbClient.from('notifications').insert({
                             user_id: club.created_by,
                             title: title,
-                            message: message
+                            message: message,
+                            club_name: club.name
                         });
+                        
+                        if (status === 'rejected' && club.profiles?.email) {
+                            try {
+                                await window.sbClient.functions.invoke('send-event-review', {
+                                    body: { type: 'rejection', email: club.profiles.email, title: `Club Creation: ${club.name}`, reason }
+                                });
+                            } catch(e) {}
+                        }
                     }
                     
-                    // Reload list
                     listContainer.innerHTML = '';
                     loading.style.display = 'block';
                     await loadPending();
@@ -131,7 +166,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 window.showToast('Error applying decision.', 'error');
                 console.error(e);
             }
-        });
+        };
+
+        if (action === 'reject') {
+            promptForReason(action, processDecision);
+        } else {
+            processDecision();
+        }
     }
 
     const eventsList = document.getElementById('pending-events-list');
@@ -186,7 +227,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const titleText = btn.getAttribute('data-title');
         const clubNameText = btn.getAttribute('data-club');
 
-        promptForReason(action, async (reason) => {
+        const processDecision = async (reason = '') => {
             try {
                 const status = action === 'approve' ? 'approved' : 'rejected';
                 const { error } = await window.sbClient
@@ -195,7 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .eq('id', id);
 
                 if (!error) {
-                    const { data: members } = await window.sbClient.from('club_members').select('user_id').eq('club_id', clubId);
+                    const { data: members } = await window.sbClient.from('club_members').select('user_id, profiles(email)').eq('club_id', clubId);
                     
                     if (members && members.length > 0) {
                         const title = status === 'approved' ? 'New Event Posted!' : 'Event Request Rejected';
@@ -206,9 +247,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const notifications = members.map(m => ({
                             user_id: m.user_id,
                             title: title,
-                            message: message
+                            message: message,
+                            club_name: clubNameText
                         }));
                         await window.sbClient.from('notifications').insert(notifications);
+                        
+                        if (status === 'rejected') {
+                            try {
+                                const emails = members.map(m => m.profiles?.email).filter(Boolean);
+                                if (emails.length > 0) {
+                                    await window.sbClient.functions.invoke('send-event-review', {
+                                        body: { type: 'rejection', email: emails, title: `Event Request: ${titleText} (${clubNameText})`, reason }
+                                    });
+                                }
+                            } catch(e) {}
+                        }
                     }
                     
                     eventsList.innerHTML = '';
@@ -221,7 +274,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 window.showToast('Error applying decision.', 'error');
                 console.error(e);
             }
-        });
+        };
+
+        if (action === 'reject') {
+            promptForReason(action, processDecision);
+        } else {
+            processDecision();
+        }
     }
 
     const socialsList = document.getElementById('pending-socials-list');
@@ -276,7 +335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const clubNameText = btn.getAttribute('data-club');
         const urlText = btn.getAttribute('data-url');
 
-        promptForReason(action, async (reason) => {
+        const processDecision = async (reason = '') => {
             try {
                 const status = action === 'approve' ? 'approved' : 'rejected';
                 const { error } = await window.sbClient
@@ -296,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     
                     // Notify club members
-                    const { data: members } = await window.sbClient.from('club_members').select('user_id').eq('club_id', clubId);
+                    const { data: members } = await window.sbClient.from('club_members').select('user_id, profiles(email)').eq('club_id', clubId);
                     if (members && members.length > 0) {
                         const notifTitle = status === 'approved' ? 'Social Link Approved!' : 'Social Link Rejected';
                         const notifMessage = status === 'approved'
@@ -306,9 +365,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const notifications = members.map(m => ({
                             user_id: m.user_id,
                             title: notifTitle,
-                            message: notifMessage
+                            message: notifMessage,
+                            club_name: clubNameText
                         }));
                         await window.sbClient.from('notifications').insert(notifications);
+                        
+                        if (status === 'rejected') {
+                            try {
+                                const emails = members.map(m => m.profiles?.email).filter(Boolean);
+                                if (emails.length > 0) {
+                                    await window.sbClient.functions.invoke('send-event-review', {
+                                        body: { type: 'rejection', email: emails, title: `Social Link: ${titleText} (${clubNameText})`, reason }
+                                    });
+                                }
+                            } catch(e) {}
+                        }
                     }
                     
                     socialsList.innerHTML = '';
@@ -321,8 +392,169 @@ document.addEventListener('DOMContentLoaded', async () => {
                 window.showToast('Error applying decision.', 'error');
                 console.error(e);
             }
-        });
+        };
+
+        if (action === 'reject') {
+            promptForReason(action, processDecision);
+        } else {
+            processDecision();
+        }
     }
+
+    let masterCalendarDate = new Date();
+
+    async function loadMasterCalendar() {
+        const year = masterCalendarDate.getFullYear();
+        const month = masterCalendarDate.getMonth();
+        const monthName = masterCalendarDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        try {
+            const { data: events, error } = await window.sbClient
+                .from('events')
+                .select('*, clubs(name)')
+                .eq('status', 'approved')
+                .order('start_time', { ascending: true });
+
+            if (error) throw error;
+
+            const monthEvents = events.filter(ev => {
+                const d = new Date(ev.start_time);
+                return d.getFullYear() === year && d.getMonth() === month;
+            });
+
+            let cells = '';
+            for (let i = 0; i < firstDay; i++) cells += '<div class="cal-cell empty"></div>';
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayEvents = monthEvents.filter(ev => {
+                    const ed = new Date(ev.start_time);
+                    return ed.getDate() === d;
+                });
+                let evHtml = '';
+                dayEvents.forEach(ev => {
+                    const evJson = JSON.stringify(ev).replace(/"/g, '&quot;');
+                    evHtml += `<div class="cal-event" style="background:${ev.color || '#3b82f6'}; cursor:pointer;" onclick="showAdminEventModal(${evJson})">${esc(ev.title)} <small style="opacity:0.8">(${esc(ev.clubs?.name || '')})</small></div>`;
+                });
+                cells += `<div class="cal-cell"><span class="cal-date">${d}</span>${evHtml}</div>`;
+            }
+
+            const contentArea = document.getElementById('masterCalendarContent');
+            contentArea.innerHTML = `
+                <div class="tab-calendar">
+                    <div class="cal-header">
+                        <button class="cal-nav" id="mCalPrev">◀</button>
+                        <h3>${monthName}</h3>
+                        <button class="cal-nav" id="mCalNext">▶</button>
+                    </div>
+                    <div class="cal-grid">
+                        <div class="cal-day-label">Sun</div><div class="cal-day-label">Mon</div>
+                        <div class="cal-day-label">Tue</div><div class="cal-day-label">Wed</div>
+                        <div class="cal-day-label">Thu</div><div class="cal-day-label">Fri</div>
+                        <div class="cal-day-label">Sat</div>
+                        ${cells}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('mCalPrev').addEventListener('click', () => { masterCalendarDate.setMonth(masterCalendarDate.getMonth() - 1); loadMasterCalendar(); });
+            document.getElementById('mCalNext').addEventListener('click', () => { masterCalendarDate.setMonth(masterCalendarDate.getMonth() + 1); loadMasterCalendar(); });
+
+        } catch (e) {
+            console.error(e);
+            window.showToast('Failed to load master calendar.', 'error');
+        }
+    }
+
+    function esc(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    window.showAdminEventModal = function(ev) {
+        document.getElementById('adminModalEvTitle').textContent = ev.title;
+        document.getElementById('adminModalEvClub').textContent = ev.clubs?.name || 'Unknown';
+        
+        const dStart = new Date(ev.start_time);
+        document.getElementById('adminModalEvStart').textContent = dStart.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        
+        if (ev.end_time) {
+            document.getElementById('adminModalEvEndContainer').style.display = 'block';
+            const dEnd = new Date(ev.end_time);
+            document.getElementById('adminModalEvEnd').textContent = dEnd.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        } else {
+            document.getElementById('adminModalEvEndContainer').style.display = 'none';
+        }
+        
+        document.getElementById('adminModalEvDesc').textContent = ev.description || 'No description provided.';
+        document.getElementById('adminModalEvEditForm').style.display = 'none';
+        
+        const editBtn = document.getElementById('adminModalEditBtn');
+        const deleteBtn = document.getElementById('adminModalDeleteBtn');
+        
+        const newEditBtn = editBtn.cloneNode(true);
+        editBtn.parentNode.replaceChild(newEditBtn, editBtn);
+        
+        const newDeleteBtn = deleteBtn.cloneNode(true);
+        deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+        
+        newDeleteBtn.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to delete this event? This cannot be undone.')) {
+                const { error } = await window.sbClient.from('events').delete().eq('id', ev.id);
+                if (error) {
+                    window.showToast('Failed to delete event.', 'error');
+                } else {
+                    window.showToast('Event deleted successfully.', 'success');
+                    document.getElementById('adminEventModal').style.display = 'none';
+                    loadMasterCalendar();
+                }
+            }
+        });
+        
+        newEditBtn.addEventListener('click', () => {
+            document.getElementById('adminModalEvEditForm').style.display = 'block';
+            document.getElementById('adminEditEvTitle').value = ev.title;
+            document.getElementById('adminEditEvDesc').value = ev.description || '';
+            document.getElementById('adminEditEvStart').value = ev.start_time ? ev.start_time.slice(0, 16) : '';
+            document.getElementById('adminEditEvEnd').value = ev.end_time ? ev.end_time.slice(0, 16) : '';
+        });
+        
+        const saveEditBtn = document.getElementById('adminSaveEditEvBtn');
+        const newSaveEditBtn = saveEditBtn.cloneNode(true);
+        saveEditBtn.parentNode.replaceChild(newSaveEditBtn, saveEditBtn);
+        
+        newSaveEditBtn.addEventListener('click', async () => {
+            const title = document.getElementById('adminEditEvTitle').value;
+            const desc = document.getElementById('adminEditEvDesc').value;
+            const start = document.getElementById('adminEditEvStart').value;
+            const end = document.getElementById('adminEditEvEnd').value;
+            
+            if(!title || !start) return window.showToast('Title and Start Time required.', 'error');
+            
+            // Edit forces re-approval
+            const { error } = await window.sbClient.from('events').update({
+                title, description: desc, start_time: start, end_time: end || null, status: 'pending'
+            }).eq('id', ev.id);
+            
+            if (error) {
+                window.showToast('Failed to edit event.', 'error');
+            } else {
+                window.showToast('Event updated. It is now pending re-approval.', 'success');
+                document.getElementById('adminEventModal').style.display = 'none';
+                loadMasterCalendar();
+                loadPendingEvents();
+            }
+        });
+        
+        document.getElementById('adminCancelEditEvBtn').onclick = () => {
+            document.getElementById('adminModalEvEditForm').style.display = 'none';
+        };
+
+        document.getElementById('adminEventModal').style.display = 'flex';
+    };
 
     loadPending();
     loadPendingEvents();
