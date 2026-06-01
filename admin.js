@@ -187,6 +187,87 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    const socialsList = document.getElementById('pending-socials-list');
+    const socialsLoading = document.getElementById('loading-socials');
+    const socialsEmpty = document.getElementById('empty-socials-state');
+
+    async function loadPendingSocials() {
+        try {
+            const { data: pending, error } = await window.sbClient
+                .from('pending_socials')
+                .select('*, clubs(id, name, socials)')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            
+            socialsLoading.style.display = 'none';
+
+            if (!pending || pending.length === 0) {
+                socialsList.style.display = 'none';
+                socialsEmpty.style.display = 'block';
+                return;
+            }
+
+            socialsList.style.display = 'flex';
+            socialsEmpty.style.display = 'none';
+
+            socialsList.innerHTML = pending.map(soc => `
+                <div class="settings-card" style="border-left: 4px solid #8b5cf6; padding: 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <h3 style="margin-top:0;">${soc.title}</h3>
+                            <p style="margin: 5px 0;"><strong>Club:</strong> ${soc.clubs?.name || 'Unknown'}</p>
+                            <p style="margin: 5px 0;"><strong>URL:</strong> <a href="${soc.url}" target="_blank">${soc.url}</a></p>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:10px; min-width:120px;">
+                            <button onclick="handleSocialDecision('${soc.id}', 'approve', '${soc.clubs?.id}', '${soc.title}', '${soc.url}')" class="btn-primary" style="background:#10b981; border:none;">Approve</button>
+                            <button onclick="handleSocialDecision('${soc.id}', 'reject')" class="btn-primary" style="background:#ef4444; border:none;">Reject</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+        } catch (e) {
+            console.error(e);
+            socialsLoading.style.display = 'none';
+        }
+    }
+
+    window.handleSocialDecision = async (id, action, clubId, title, url) => {
+        if (!confirm(\`Are you sure you want to \${action} this social link?\`)) return;
+
+        try {
+            const status = action === 'approve' ? 'approved' : 'rejected';
+            const { error } = await window.sbClient
+                .from('pending_socials')
+                .update({ status })
+                .eq('id', id);
+
+            if (!error) {
+                if (status === 'approved' && clubId) {
+                    const { data: clubData } = await window.sbClient.from('clubs').select('socials').eq('id', clubId).single();
+                    if (clubData) {
+                        const currentSocials = clubData.socials || {};
+                        const platformKey = title.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        currentSocials[platformKey] = url;
+                        await window.sbClient.from('clubs').update({ socials: currentSocials }).eq('id', clubId);
+                    }
+                }
+                
+                socialsList.innerHTML = '';
+                socialsLoading.style.display = 'block';
+                await loadPendingSocials();
+            } else {
+                alert(\`Failed to \${action} social link.\`);
+            }
+        } catch (e) {
+            alert('Error applying decision.');
+            console.error(e);
+        }
+    }
+
     loadPending();
     loadPendingEvents();
+    loadPendingSocials();
 });

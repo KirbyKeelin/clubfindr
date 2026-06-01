@@ -239,7 +239,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     /* ====== MANAGE TAB ====== */
     function renderManage() {
-        const socials = club.socials || {};
         contentArea.innerHTML = `
             <div class="tab-manage" style="padding: 30px;">
                 <h3>Manage Club</h3>
@@ -251,27 +250,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <textarea id="editDesc" rows="3" style="width:100%; border:1px solid #ddd; padding:8px;">${esc(club.description || '')}</textarea>
                     </div>
                     <div class="form-group">
-                        <label>Banner Image URL</label>
-                        <input type="text" id="editBanner" value="${esc(club.banner_url || '')}" style="width:100%; border:1px solid #ddd; padding:8px;">
+                        <label>Banner Image</label>
+                        <input type="file" id="editBannerFile" accept="image/*" style="width:100%; border:1px solid #ddd; padding:8px;">
+                        <input type="hidden" id="editBannerUrl" value="${esc(club.banner_url || '')}">
+                        <div id="bannerPreviewContainer" style="margin-top:10px; ${club.banner_url ? '' : 'display:none;'}">
+                            <img id="bannerPreview" src="${esc(club.banner_url || '')}" style="max-width:100%; height:auto; border-radius:4px;">
+                        </div>
                     </div>
                     <button class="btn-primary" id="saveInfoBtn">Save Info</button>
                 </div>
 
                 <div class="settings-card" style="margin-bottom: 20px;">
-                    <h4>Edit Social Links</h4>
+                    <h4>Request to Add Social Link</h4>
+                    <p style="font-size:14px; color:#555;">Links must be approved by an Admin.</p>
                     <div class="form-group">
-                        <label>Instagram URL</label>
-                        <input type="text" id="editInsta" value="${esc(socials.instagram || '')}" style="width:100%; border:1px solid #ddd; padding:8px;">
+                        <label>Platform/Title (e.g. Instagram, Discord)</label>
+                        <input type="text" id="socialTitle" placeholder="Instagram" style="width:100%; border:1px solid #ddd; padding:8px;">
                     </div>
                     <div class="form-group">
-                        <label>Twitter URL</label>
-                        <input type="text" id="editTwitter" value="${esc(socials.twitter || '')}" style="width:100%; border:1px solid #ddd; padding:8px;">
+                        <label>URL</label>
+                        <input type="url" id="socialUrl" placeholder="https://..." style="width:100%; border:1px solid #ddd; padding:8px;">
                     </div>
-                    <div class="form-group">
-                        <label>Website URL</label>
-                        <input type="text" id="editWeb" value="${esc(socials.website || '')}" style="width:100%; border:1px solid #ddd; padding:8px;">
-                    </div>
-                    <button class="btn-primary" id="saveSocialsBtn">Save Socials</button>
+                    <button class="btn-primary" id="reqSocialBtn">Submit Link for Approval</button>
                 </div>
 
                 <div class="settings-card">
@@ -280,6 +280,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="form-group">
                         <label>Event Title</label>
                         <input type="text" id="evTitle" placeholder="e.g. First Meeting" style="width:100%; border:1px solid #ddd; padding:8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="evDesc" rows="3" placeholder="What is this event about?" style="width:100%; border:1px solid #ddd; padding:8px;"></textarea>
                     </div>
                     <div class="form-group">
                         <label>Start Time</label>
@@ -294,58 +298,144 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         `;
 
-        document.getElementById('saveInfoBtn').addEventListener('click', async () => {
-            const d = document.getElementById('editDesc').value;
-            const b = document.getElementById('editBanner').value;
-            await window.sbClient.from('clubs').update({ description: d, banner_url: b }).eq('id', clubId);
-            club.description = d;
-            club.banner_url = b;
-            document.getElementById('clubTitle').textContent = club.name;
-            const bannerImg = document.querySelector('.club-banner img');
-            if (bannerImg) bannerImg.src = club.banner_url || 'https://picsum.photos/1200/400?random=10';
-            alert('Club info updated!');
-        });
-
-        document.getElementById('saveSocialsBtn').addEventListener('click', async () => {
-            const inst = document.getElementById('editInsta').value;
-            const twit = document.getElementById('editTwitter').value;
-            const web = document.getElementById('editWeb').value;
-            const newSocials = { instagram: inst, twitter: twit, website: web };
-            await window.sbClient.from('clubs').update({ socials: newSocials }).eq('id', clubId);
-            club.socials = newSocials;
-            alert('Socials updated!');
-        });
-
-        document.getElementById('reqEventBtn').addEventListener('click', async () => {
-            const title = document.getElementById('evTitle').value;
-            const start = document.getElementById('evStart').value;
-            const end = document.getElementById('evEnd').value;
-            if(!title || !start) { alert('Title and Start Time required.'); return; }
+        setTimeout(() => {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            const minDateTime = now.toISOString().slice(0, 16);
+            document.getElementById('evStart').min = minDateTime;
+            document.getElementById('evEnd').min = minDateTime;
             
-            const { error } = await window.sbClient.from('events').insert({
-                club_id: clubId,
-                title: title,
-                start_time: start,
-                end_time: end || null,
-                status: 'pending'
-            });
-            if(error) {
-                alert('Failed to request event: ' + error.message);
-            } else {
-                alert('Event requested! Awaiting approval.');
-                document.getElementById('evTitle').value = '';
-                document.getElementById('evStart').value = '';
-                document.getElementById('evEnd').value = '';
-                
-                try {
-                    await window.sbClient.functions.invoke('send-event-review', {
-                        body: { clubId, title, start }
+            let cropper = null;
+            const bannerInput = document.getElementById('editBannerFile');
+            const cropperModal = document.getElementById('cropperModal');
+            const cropperImage = document.getElementById('cropperImage');
+            const applyCropBtn = document.getElementById('applyCropBtn');
+            const cancelCropBtn = document.getElementById('cancelCropBtn');
+            const bannerUrlInput = document.getElementById('editBannerUrl');
+            const bannerPreview = document.getElementById('bannerPreview');
+            const bannerPreviewContainer = document.getElementById('bannerPreviewContainer');
+
+            bannerInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    cropperImage.src = event.target.result;
+                    cropperModal.style.display = 'flex';
+                    if (cropper) cropper.destroy();
+                    cropper = new Cropper(cropperImage, {
+                        aspectRatio: 3 / 1,
+                        viewMode: 1
                     });
-                } catch(e) {
-                    console.error('Email notification error:', e);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            cancelCropBtn.addEventListener('click', () => {
+                cropperModal.style.display = 'none';
+                bannerInput.value = '';
+                if (cropper) cropper.destroy();
+            });
+
+            applyCropBtn.addEventListener('click', async () => {
+                if (!cropper) return;
+                applyCropBtn.disabled = true;
+                applyCropBtn.textContent = 'Uploading...';
+                
+                cropper.getCroppedCanvas({ width: 1200, height: 400 }).toBlob(async (blob) => {
+                    if (!blob) {
+                        alert('Crop failed');
+                        applyCropBtn.disabled = false;
+                        applyCropBtn.textContent = 'Apply & Upload';
+                        return;
+                    }
+                    const fileName = \`banner-\${clubId}-\${Date.now()}.jpg\`;
+                    const { data, error } = await window.sbClient.storage
+                        .from('banners')
+                        .upload(fileName, blob, { contentType: 'image/jpeg' });
+                        
+                    if (error) {
+                        alert('Upload failed: ' + error.message);
+                    } else {
+                        const { data: publicData } = window.sbClient.storage.from('banners').getPublicUrl(fileName);
+                        bannerUrlInput.value = publicData.publicUrl;
+                        bannerPreview.src = publicData.publicUrl;
+                        bannerPreviewContainer.style.display = 'block';
+                        alert('Image uploaded! Click "Save Info" to confirm.');
+                        cropperModal.style.display = 'none';
+                    }
+                    applyCropBtn.disabled = false;
+                    applyCropBtn.textContent = 'Apply & Upload';
+                }, 'image/jpeg', 0.8);
+            });
+
+            document.getElementById('saveInfoBtn').addEventListener('click', async () => {
+                const desc = document.getElementById('editDesc').value;
+                const banner = document.getElementById('editBannerUrl').value;
+                await window.sbClient.from('clubs').update({ description: desc, banner_url: banner }).eq('id', clubId);
+                club.description = desc;
+                club.banner_url = banner;
+                document.getElementById('clubTitle').textContent = club.name;
+                const bannerImg = document.querySelector('.club-banner img');
+                if (bannerImg) bannerImg.src = club.banner_url || 'https://picsum.photos/1200/400?random=10';
+                alert('Club info updated!');
+            });
+
+            document.getElementById('reqSocialBtn').addEventListener('click', async () => {
+                const title = document.getElementById('socialTitle').value.trim();
+                const url = document.getElementById('socialUrl').value.trim();
+                if (!title || !url) return alert('Please enter both title and URL.');
+                
+                const { error } = await window.sbClient.from('pending_socials').insert({
+                    club_id: clubId,
+                    title: title,
+                    url: url,
+                    status: 'pending',
+                    created_by: currentUser.id
+                });
+                
+                if (error) alert('Error submitting request: ' + error.message);
+                else {
+                    alert('Social link request submitted to admin for approval!');
+                    document.getElementById('socialTitle').value = '';
+                    document.getElementById('socialUrl').value = '';
                 }
-            }
-        });
+            });
+
+            document.getElementById('reqEventBtn').addEventListener('click', async () => {
+                const title = document.getElementById('evTitle').value;
+                const desc = document.getElementById('evDesc').value;
+                const start = document.getElementById('evStart').value;
+                const end = document.getElementById('evEnd').value;
+                if(!title || !start) { alert('Title and Start Time required.'); return; }
+                if(end && new Date(end) <= new Date(start)) { alert('End time must be after start time.'); return; }
+                
+                const { error } = await window.sbClient.from('events').insert({
+                    club_id: clubId,
+                    title: title,
+                    description: desc,
+                    start_time: start,
+                    end_time: end || null,
+                    status: 'pending'
+                });
+                
+                if(error) {
+                    alert('Failed to request event: ' + error.message);
+                } else {
+                    alert('Event requested! Awaiting approval.');
+                    document.getElementById('evTitle').value = '';
+                    document.getElementById('evDesc').value = '';
+                    document.getElementById('evStart').value = '';
+                    document.getElementById('evEnd').value = '';
+                    
+                    try {
+                        await window.sbClient.functions.invoke('send-event-review', {
+                            body: { clubId, title, description: desc, start }
+                        });
+                    } catch(e) { console.error('Email notification error:', e); }
+                }
+            });
+        }, 0);
     }
 
     /* ====== TAB SWITCHING ====== */
