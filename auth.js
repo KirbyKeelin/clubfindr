@@ -118,7 +118,7 @@ if (localStorage.getItem('darkMode') === 'enabled') {
             // User is authenticated
             const { data: profile } = await window.sbClient
                 .from('profiles')
-                .select('display_name')
+                .select('display_name, is_admin')
                 .eq('id', session.user.id)
                 .single();
 
@@ -138,13 +138,11 @@ if (localStorage.getItem('darkMode') === 'enabled') {
             // Inject Admin link if user is admin
             if (profile?.is_admin && !isSignInPage && !isSetupProfilePage) {
                 const addAdminLink = () => {
-                    const sidebarNav = document.querySelector('.sidebar-left nav');
-                    if (sidebarNav && !sidebarNav.querySelector('a[href="admin.html"]')) {
-                        const adminLink = document.createElement('a');
-                        adminLink.href = 'admin.html';
-                        adminLink.className = 'menu-item';
-                        adminLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #ef4444;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span style="color:#ef4444; font-weight:bold;">Admin Panel</span>`;
-                        sidebarNav.appendChild(adminLink);
+                    const sidebarNavList = document.querySelector('.sidebar-left nav ul');
+                    if (sidebarNavList && !sidebarNavList.querySelector('a[href="admin.html"]')) {
+                        const adminLi = document.createElement('li');
+                        adminLi.innerHTML = `<a href="admin.html" style="color:#ef4444; font-weight:bold;">Admin Panel</a>`;
+                        sidebarNavList.appendChild(adminLi);
                     }
                 };
                 
@@ -404,7 +402,7 @@ if (localStorage.getItem('darkMode') === 'enabled') {
                             list.innerHTML = '<div style="padding:15px; text-align:center; color:#777; font-size:14px;">No notifications</div>';
                         } else {
                             list.innerHTML = data.map(n => `
-                                <div class="notif-item ${n.is_read ? '' : 'unread'}">
+                                <div class="notif-item ${n.is_read ? '' : 'unread'}" ${n.link ? `onclick="window.location.href='${n.link}'"` : ''}>
                                     <div class="notif-title">${n.title}</div>
                                     <div class="notif-msg">${n.message}</div>
                                     <div class="notif-footer">
@@ -413,8 +411,8 @@ if (localStorage.getItem('darkMode') === 'enabled') {
                                             <span class="notif-time">${timeAgo(n.created_at)}</span>
                                         </div>
                                         <div class="notif-actions">
-                                            ${!n.is_read ? `<button class="notif-action-btn" onclick="window.markNotifRead('${n.id}')">Mark Read</button>` : ''}
-                                            <button class="notif-action-btn delete-btn" onclick="window.deleteNotif('${n.id}')">✕</button>
+                                            ${!n.is_read ? `<button class="notif-action-btn" onclick="event.stopPropagation(); window.markNotifRead('${n.id}')">Mark Read</button>` : ''}
+                                            <button class="notif-action-btn delete-btn" onclick="event.stopPropagation(); window.deleteNotif('${n.id}')">✕</button>
                                         </div>
                                     </div>
                                 </div>

@@ -171,35 +171,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
             
             <!-- Event Modal Container -->
-            <div id="eventModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-                <div style="background:white; padding:20px; border-radius:8px; max-width:500px; width:90%;" class="dark-mode-modal">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
-                        <h2 id="modalEvTitle" style="margin:0;"></h2>
-                        <button onclick="document.getElementById('eventModal').style.display='none'" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+            <div id="eventModal" class="event-modal-overlay">
+                <div class="event-modal-content">
+                    <div class="event-modal-header">
+                        <h2 id="modalEvTitle"></h2>
+                        <button onclick="document.getElementById('eventModal').style.display='none'" class="event-modal-close">&times;</button>
                     </div>
-                    <p><strong>Start:</strong> <span id="modalEvStart"></span></p>
-                    <p id="modalEvEndContainer" style="display:none;"><strong>End:</strong> <span id="modalEvEnd"></span></p>
-                    <p><strong>Description:</strong></p>
-                    <p id="modalEvDesc" style="background:#f9fafb; padding:10px; border-radius:4px; font-size:14px;"></p>
+                    <p style="margin: 5px 0;"><strong>Start:</strong> <span id="modalEvStart"></span></p>
+                    <p id="modalEvEndContainer" style="display:none; margin: 5px 0;"><strong>End:</strong> <span id="modalEvEnd"></span></p>
+                    <p style="margin: 15px 0 5px 0;"><strong>Description:</strong></p>
+                    <div id="modalEvDesc" class="event-modal-desc"></div>
                     
-                    <div id="modalEvManageContainer" style="display:none; margin-top:20px; border-top:1px solid #ddd; padding-top:15px;">
+                    <div id="modalEvManageContainer" class="event-modal-manage" style="display:none;">
                         <h4 style="margin-top:0;">Manage Event</h4>
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <button id="modalEditBtn" class="btn-primary" style="background:#f59e0b; border:none; padding:8px 15px;">Edit Event</button>
-                            <button id="modalDeleteBtn" class="btn-primary" style="background:#ef4444; border:none; padding:8px 15px;">Delete Event</button>
+                        <div class="event-modal-btn-row">
+                            <button id="modalEditBtn" class="btn-primary" style="background:#f59e0b; border:none; padding:8px 15px; color:white;">Edit Event</button>
+                            <button id="modalDeleteBtn" class="btn-primary" style="background:#ef4444; border:none; padding:8px 15px; color:white;">Delete Event</button>
                         </div>
                     </div>
                     
                     <!-- Edit Form -->
-                    <div id="modalEvEditForm" style="display:none; margin-top:20px; border-top:1px solid #ddd; padding-top:15px;">
+                    <div id="modalEvEditForm" class="event-modal-manage" style="display:none;">
                         <h4 style="margin-top:0;">Edit Event (Requires Re-Approval)</h4>
-                        <div class="form-group"><label>Title</label><input type="text" id="editEvTitle" style="width:100%; padding:8px;"></div>
-                        <div class="form-group"><label>Description</label><textarea id="editEvDesc" rows="3" style="width:100%; padding:8px;"></textarea></div>
-                        <div class="form-group"><label>Start</label><input type="datetime-local" id="editEvStart" style="width:100%; padding:8px;"></div>
-                        <div class="form-group"><label>End</label><input type="datetime-local" id="editEvEnd" style="width:100%; padding:8px;"></div>
-                        <div style="display:flex; gap:10px; margin-top:10px;">
-                            <button id="saveEditEvBtn" class="btn-primary" style="background:#10b981; border:none;">Submit Changes</button>
-                            <button id="cancelEditEvBtn" class="btn-primary" style="background:#6b7280; border:none;">Cancel</button>
+                        <div class="event-modal-form-group"><label>Title</label><input type="text" id="editEvTitle"></div>
+                        <div class="event-modal-form-group"><label>Description</label><textarea id="editEvDesc" rows="3"></textarea></div>
+                        <div class="event-modal-form-group"><label>Start</label><input type="datetime-local" id="editEvStart"></div>
+                        <div class="event-modal-form-group"><label>End</label><input type="datetime-local" id="editEvEnd"></div>
+                        <div class="event-modal-btn-row">
+                            <button id="saveEditEvBtn" class="btn-primary" style="background:#10b981; border:none; color:white;">Submit Changes</button>
+                            <button id="cancelEditEvBtn" class="btn-primary" style="background:#6b7280; border:none; color:white;">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 try {
                     await window.sbClient.functions.invoke('send-event-review', {
-                        body: { clubId: club.id, title, description: desc, start }
+                        body: { clubId: club.id, title, description: desc, start, end }
                     });
                 } catch(e) {}
             }
@@ -562,7 +562,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     try {
                         await window.sbClient.functions.invoke('send-event-review', {
-                            body: { clubId, title, description: desc, start }
+                            body: { clubId, title, description: desc, start, end }
                         });
                     } catch(e) { console.error('Email notification error:', e); }
                 }
@@ -583,5 +583,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    renderMain();
+    const targetEventId = urlParams.get('event');
+    if (targetEventId) {
+        allButtons.forEach(b => b.classList.remove('active'));
+        if (allButtons[1]) allButtons[1].classList.add('active'); // Calendar tab
+        renderCalendar();
+        setTimeout(() => {
+            const ev = club.events.find(e => e.id === targetEventId);
+            if (ev) window.showEventModal(ev);
+        }, 100);
+    } else {
+        renderMain();
+    }
 });

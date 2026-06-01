@@ -236,7 +236,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .eq('id', id);
 
                 if (!error) {
-                    const { data: members } = await window.sbClient.from('club_members').select('user_id, profiles(email)').eq('club_id', clubId);
+                    const { data: members } = await window.sbClient.from('club_members').select('user_id, profiles(email)')
+                        .eq('club_id', clubId)
+                        .in('role', ['owner', 'leader']);
                     
                     if (members && members.length > 0) {
                         const title = status === 'approved' ? 'New Event Posted!' : 'Event Request Rejected';
@@ -248,19 +250,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                             user_id: m.user_id,
                             title: title,
                             message: message,
-                            club_name: clubNameText
+                            club_name: clubNameText,
+                            link: 'club.html?id=' + clubId + '&event=' + id
                         }));
                         await window.sbClient.from('notifications').insert(notifications);
                         
-                        if (status === 'rejected') {
-                            try {
-                                const emails = members.map(m => m.profiles?.email).filter(Boolean);
-                                if (emails.length > 0) {
+                        try {
+                            const emails = members.map(m => m.profiles?.email).filter(Boolean);
+                            if (emails.length > 0) {
+                                if (status === 'rejected') {
                                     await window.sbClient.functions.invoke('send-event-review', {
                                         body: { type: 'rejection', email: emails, title: `Event Request: ${titleText} (${clubNameText})`, reason }
                                     });
+                                } else if (status === 'approved') {
+                                    await window.sbClient.functions.invoke('send-event-review', {
+                                        body: { type: 'approval', email: emails, title: `Event Request: ${titleText} (${clubNameText})` }
+                                    });
                                 }
-                            } catch(e) {}
+                            }
+                        } catch(e) {
+                            console.error('Failed to send event decision email', e);
                         }
                     }
                     
@@ -355,7 +364,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     
                     // Notify club members
-                    const { data: members } = await window.sbClient.from('club_members').select('user_id, profiles(email)').eq('club_id', clubId);
+                    const { data: members } = await window.sbClient.from('club_members').select('user_id, profiles(email)')
+                        .eq('club_id', clubId)
+                        .in('role', ['owner', 'leader']);
                     if (members && members.length > 0) {
                         const notifTitle = status === 'approved' ? 'Social Link Approved!' : 'Social Link Rejected';
                         const notifMessage = status === 'approved'
@@ -370,15 +381,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }));
                         await window.sbClient.from('notifications').insert(notifications);
                         
-                        if (status === 'rejected') {
-                            try {
-                                const emails = members.map(m => m.profiles?.email).filter(Boolean);
-                                if (emails.length > 0) {
+                        try {
+                            const emails = members.map(m => m.profiles?.email).filter(Boolean);
+                            if (emails.length > 0) {
+                                if (status === 'rejected') {
                                     await window.sbClient.functions.invoke('send-event-review', {
                                         body: { type: 'rejection', email: emails, title: `Social Link: ${titleText} (${clubNameText})`, reason }
                                     });
+                                } else if (status === 'approved') {
+                                    await window.sbClient.functions.invoke('send-event-review', {
+                                        body: { type: 'approval', email: emails, title: `Social Link: ${titleText} (${clubNameText})` }
+                                    });
                                 }
-                            } catch(e) {}
+                            }
+                        } catch(e) {}
                         }
                     }
                     

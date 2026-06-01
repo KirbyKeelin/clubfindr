@@ -92,36 +92,36 @@
     </div>
 
     <!-- Event Modal for Master Calendar -->
-    <div id="adminEventModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:white; padding:20px; border-radius:8px; max-width:500px; width:90%;" class="dark-mode-modal">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
-                <h2 id="adminModalEvTitle" style="margin:0;"></h2>
-                <button onclick="document.getElementById('adminEventModal').style.display='none'" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+    <div id="adminEventModal" class="event-modal-overlay">
+        <div class="event-modal-content">
+            <div class="event-modal-header">
+                <h2 id="adminModalEvTitle"></h2>
+                <button onclick="document.getElementById('adminEventModal').style.display='none'" class="event-modal-close">&times;</button>
             </div>
-            <p><strong>Club:</strong> <span id="adminModalEvClub"></span></p>
-            <p><strong>Start:</strong> <span id="adminModalEvStart"></span></p>
-            <p id="adminModalEvEndContainer" style="display:none;"><strong>End:</strong> <span id="adminModalEvEnd"></span></p>
-            <p><strong>Description:</strong></p>
-            <p id="adminModalEvDesc" style="background:#f9fafb; padding:10px; border-radius:4px; font-size:14px;"></p>
+            <p style="margin: 5px 0;"><strong>Club:</strong> <span id="adminModalEvClub"></span></p>
+            <p style="margin: 5px 0;"><strong>Start:</strong> <span id="adminModalEvStart"></span></p>
+            <p id="adminModalEvEndContainer" style="display:none; margin: 5px 0;"><strong>End:</strong> <span id="adminModalEvEnd"></span></p>
+            <p style="margin: 15px 0 5px 0;"><strong>Description:</strong></p>
+            <div id="adminModalEvDesc" class="event-modal-desc"></div>
             
-            <div style="margin-top:20px; border-top:1px solid #ddd; padding-top:15px;">
+            <div class="event-modal-manage">
                 <h4 style="margin-top:0;">Manage Event</h4>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button id="adminModalEditBtn" class="btn-primary" style="background:#f59e0b; border:none; padding:8px 15px;">Edit Event</button>
-                    <button id="adminModalDeleteBtn" class="btn-primary" style="background:#ef4444; border:none; padding:8px 15px;">Delete Event</button>
+                <div class="event-modal-btn-row">
+                    <button id="adminModalEditBtn" class="btn-primary" style="background:#f59e0b; border:none; padding:8px 15px; color:white;">Edit Event</button>
+                    <button id="adminModalDeleteBtn" class="btn-primary" style="background:#ef4444; border:none; padding:8px 15px; color:white;">Delete Event</button>
                 </div>
             </div>
 
             <!-- Edit Form -->
-            <div id="adminModalEvEditForm" style="display:none; margin-top:20px; border-top:1px solid #ddd; padding-top:15px;">
+            <div id="adminModalEvEditForm" class="event-modal-manage" style="display:none;">
                 <h4 style="margin-top:0;">Edit Event (Requires Re-Approval)</h4>
-                <div class="form-group"><label>Title</label><input type="text" id="adminEditEvTitle" style="width:100%; padding:8px;"></div>
-                <div class="form-group"><label>Description</label><textarea id="adminEditEvDesc" rows="3" style="width:100%; padding:8px;"></textarea></div>
-                <div class="form-group"><label>Start</label><input type="datetime-local" id="adminEditEvStart" style="width:100%; padding:8px;"></div>
-                <div class="form-group"><label>End</label><input type="datetime-local" id="adminEditEvEnd" style="width:100%; padding:8px;"></div>
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button id="adminSaveEditEvBtn" class="btn-primary" style="background:#10b981; border:none;">Submit Changes</button>
-                    <button id="adminCancelEditEvBtn" class="btn-primary" style="background:#6b7280; border:none;">Cancel</button>
+                <div class="event-modal-form-group"><label>Title</label><input type="text" id="adminEditEvTitle"></div>
+                <div class="event-modal-form-group"><label>Description</label><textarea id="adminEditEvDesc" rows="3"></textarea></div>
+                <div class="event-modal-form-group"><label>Start</label><input type="datetime-local" id="adminEditEvStart"></div>
+                <div class="event-modal-form-group"><label>End</label><input type="datetime-local" id="adminEditEvEnd"></div>
+                <div class="event-modal-btn-row">
+                    <button id="adminSaveEditEvBtn" class="btn-primary" style="background:#10b981; border:none; color:white;">Submit Changes</button>
+                    <button id="adminCancelEditEvBtn" class="btn-primary" style="background:#6b7280; border:none; color:white;">Cancel</button>
                 </div>
             </div>
         </div>
