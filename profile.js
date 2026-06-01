@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.error('Error saving profile:', error);
             const msg = error.message || error.error_description || JSON.stringify(error);
-            alert('Failed to save profile. ' + msg + '\nIf uploading a picture failed, ensure your avatars bucket is public and has INSERT policies configured.');
+            window.showToast('Failed to save profile. ' + msg + '\nIf uploading a picture failed, ensure your avatars bucket is public and has INSERT policies configured.', 'error');
         } finally {
             saveProfileBtn.textContent = 'Save Changes';
             saveProfileBtn.disabled = false;
@@ -162,12 +162,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
-            alert('Please select a valid image file (PNG, JPG, etc.).');
+            window.showToast('Please select a valid image file (PNG, JPG, etc., 'error').');
             return;
         }
 
         if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            alert('Image must be less than 5MB in size.');
+            window.showToast('Image must be less than 5MB in size.', 'error');
             return;
         }
 
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             height: 300
         }).toBlob((blob) => {
             if (!blob) {
-                alert('Crop failed.');
+                window.showToast('Crop failed.', 'error');
                 return;
             }
             // Convert blob to File object to ensure compatibility with Supabase storage

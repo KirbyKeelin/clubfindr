@@ -253,9 +253,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <label>Banner Image</label>
                         <input type="file" id="editBannerFile" accept="image/*" style="width:100%; border:1px solid #ddd; padding:8px;">
                         <input type="hidden" id="editBannerUrl" value="${esc(club.banner_url || '')}">
-                        <div id="bannerPreviewContainer" style="margin-top:10px; ${club.banner_url ? '' : 'display:none;'}">
-                            <img id="bannerPreview" src="${esc(club.banner_url || '')}" style="max-width:100%; height:auto; border-radius:4px;">
-                        </div>
                     </div>
                     <button class="btn-primary" id="saveInfoBtn">Save Info</button>
                 </div>
@@ -312,8 +309,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const applyCropBtn = document.getElementById('applyCropBtn');
             const cancelCropBtn = document.getElementById('cancelCropBtn');
             const bannerUrlInput = document.getElementById('editBannerUrl');
-            const bannerPreview = document.getElementById('bannerPreview');
-            const bannerPreviewContainer = document.getElementById('bannerPreviewContainer');
 
             bannerInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -344,7 +339,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 cropper.getCroppedCanvas({ width: 1200, height: 400 }).toBlob(async (blob) => {
                     if (!blob) {
-                        alert('Crop failed');
+                        window.showToast('Crop failed', 'error');
                         applyCropBtn.disabled = false;
                         applyCropBtn.textContent = 'Apply & Upload';
                         return;
@@ -355,13 +350,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         .upload(fileName, blob, { contentType: 'image/jpeg' });
                         
                     if (error) {
-                        alert('Upload failed: ' + error.message);
+                        window.showToast('Upload failed: ' + error.message, 'error');
                     } else {
                         const { data: publicData } = window.sbClient.storage.from('banners').getPublicUrl(fileName);
                         bannerUrlInput.value = publicData.publicUrl;
-                        bannerPreview.src = publicData.publicUrl;
-                        bannerPreviewContainer.style.display = 'block';
-                        alert('Image uploaded! Click "Save Info" to confirm.');
+                        window.showToast('Image uploaded! Click "Save Info" to confirm.', 'success');
                         cropperModal.style.display = 'none';
                     }
                     applyCropBtn.disabled = false;
@@ -378,13 +371,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('clubTitle').textContent = club.name;
                 const bannerImg = document.querySelector('.club-banner img');
                 if (bannerImg) bannerImg.src = club.banner_url || 'https://picsum.photos/1200/400?random=10';
-                alert('Club info updated!');
+                window.showToast('Club info updated!', 'success');
             });
 
             document.getElementById('reqSocialBtn').addEventListener('click', async () => {
                 const title = document.getElementById('socialTitle').value.trim();
                 const url = document.getElementById('socialUrl').value.trim();
-                if (!title || !url) return alert('Please enter both title and URL.');
+                if (!title || !url) return window.showToast('Please enter both title and URL.', 'error');
                 
                 const { error } = await window.sbClient.from('pending_socials').insert({
                     club_id: clubId,
@@ -394,9 +387,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     created_by: currentUser.id
                 });
                 
-                if (error) alert('Error submitting request: ' + error.message);
+                if (error) window.showToast('Error submitting request: ' + error.message, 'error');
                 else {
-                    alert('Social link request submitted to admin for approval!');
+                    window.showToast('Social link request submitted to admin for approval!', 'success');
                     document.getElementById('socialTitle').value = '';
                     document.getElementById('socialUrl').value = '';
                 }
@@ -407,8 +400,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const desc = document.getElementById('evDesc').value;
                 const start = document.getElementById('evStart').value;
                 const end = document.getElementById('evEnd').value;
-                if(!title || !start) { alert('Title and Start Time required.'); return; }
-                if(end && new Date(end) <= new Date(start)) { alert('End time must be after start time.'); return; }
+                if(!title || !start) { window.showToast('Title and Start Time required.', 'error'); return; }
+                if(end && new Date(end) <= new Date(start)) { window.showToast('End time must be after start time.', 'error'); return; }
                 
                 const { error } = await window.sbClient.from('events').insert({
                     club_id: clubId,
@@ -420,9 +413,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 
                 if(error) {
-                    alert('Failed to request event: ' + error.message);
+                    window.showToast('Failed to request event: ' + error.message, 'error');
                 } else {
-                    alert('Event requested! Awaiting approval.');
+                    window.showToast('Event requested! Awaiting approval.', 'success');
                     document.getElementById('evTitle').value = '';
                     document.getElementById('evDesc').value = '';
                     document.getElementById('evStart').value = '';

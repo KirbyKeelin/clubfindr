@@ -55,8 +55,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const faculty = document.getElementById('newClubFaculty').value.trim();
             const info = document.getElementById('newClubInfo').value.trim();
 
-            if (!name) { alert('Please enter a club name.'); return; }
-            if (!currentUser) { alert('You must be signed in to create a club.'); return; }
+            if (!name) { window.showToast('Please enter a club name.', 'error'); return; }
+            if (!currentUser) { window.showToast('You must be signed in to create a club.', 'error'); return; }
 
             const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
 
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await renderManagedClubs();
             } catch (e) {
                 console.error(e);
-                alert('Failed to create club: ' + (e.message || 'Unknown error'));
+                window.showToast('Failed to create club: ' + (e.message || 'Unknown error', 'error'));
                 createBtn.textContent = 'Create Club';
                 createBtn.disabled = false;
             }

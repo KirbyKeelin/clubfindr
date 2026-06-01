@@ -14,6 +14,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    const actionModal = document.getElementById('actionModal');
+    const cancelActionBtn = document.getElementById('cancelActionBtn');
+    const confirmActionBtn = document.getElementById('confirmActionBtn');
+    const actionReason = document.getElementById('actionReason');
+    
+    let pendingActionCallback = null;
+
+    function promptForReason(actionName, callback) {
+        document.getElementById('actionModalTitle').textContent = `Confirm ${actionName}`;
+        actionReason.value = '';
+        actionModal.style.display = 'flex';
+        pendingActionCallback = callback;
+    }
+
+    if (cancelActionBtn) {
+        cancelActionBtn.addEventListener('click', () => {
+            actionModal.style.display = 'none';
+            pendingActionCallback = null;
+        });
+    }
+
+    if (confirmActionBtn) {
+        confirmActionBtn.addEventListener('click', () => {
+            const reason = actionReason.value.trim();
+            actionModal.style.display = 'none';
+            if (pendingActionCallback) {
+                pendingActionCallback(reason);
+            }
+        });
+    }
+
     async function loadPending() {
         try {
             const { data: pending, error } = await window.sbClient
@@ -64,42 +95,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) {
             console.error(e);
             loading.style.display = 'none';
-            alert('An error occurred trying to load pending clubs.');
+            window.showToast('An error occurred trying to load pending clubs.', 'error');
         }
     }
 
     window.handleDecision = async (id, action) => {
-        if (!confirm(`Are you sure you want to ${action} this club?`)) return;
+        promptForReason(action, async (reason) => {
+            try {
+                const status = action === 'approve' ? 'approved' : 'rejected';
+                const { error } = await window.sbClient
+                    .from('clubs')
+                    .update({ status })
+                    .eq('id', id);
 
-        try {
-            const status = action === 'approve' ? 'approved' : 'rejected';
-            const { error } = await window.sbClient
-                .from('clubs')
-                .update({ status })
-                .eq('id', id);
-
-            if (!error) {
-                if (status === 'approved') {
+                if (!error) {
                     const { data: club } = await window.sbClient.from('clubs').select('created_by, name').eq('id', id).single();
                     if (club && club.created_by) {
+                        const title = status === 'approved' ? 'Club Approved!' : 'Club Rejected';
+                        const message = `Your request to create the club "${club.name}" has been ${status}. Reason: ${reason || 'None provided.'}`;
                         await window.sbClient.from('notifications').insert({
                             user_id: club.created_by,
-                            title: 'Club Approved!',
-                            message: `Your request to create the club "${club.name}" has been approved.`
+                            title: title,
+                            message: message
                         });
                     }
+                    
+                    // Reload list
+                    listContainer.innerHTML = '';
+                    loading.style.display = 'block';
+                    await loadPending();
+                } else {
+                    window.showToast(`Failed to ${action} club.`, 'error');
                 }
-                // Reload list
-                listContainer.innerHTML = '';
-                loading.style.display = 'block';
-                await loadPending();
-            } else {
-                alert(`Failed to ${action} club.`);
+            } catch (e) {
+                window.showToast('Error applying decision.', 'error');
+                console.error(e);
             }
-        } catch (e) {
-            alert('Error applying decision.');
-            console.error(e);
-        }
+        });
     }
 
     const eventsList = document.getElementById('pending-events-list');
@@ -151,40 +183,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     window.handleEventDecision = async (id, action, clubId) => {
-        if (!confirm(`Are you sure you want to ${action} this event?`)) return;
+        promptForReason(action, async (reason) => {
+            try {
+                const status = action === 'approve' ? 'approved' : 'rejected';
+                const { error } = await window.sbClient
+                    .from('events')
+                    .update({ status })
+                    .eq('id', id);
 
-        try {
-            const status = action === 'approve' ? 'approved' : 'rejected';
-            const { error } = await window.sbClient
-                .from('events')
-                .update({ status })
-                .eq('id', id);
-
-            if (!error) {
-                if (status === 'approved') {
-                    // Send notification to all club members
+                if (!error) {
                     const { data: members } = await window.sbClient.from('club_members').select('user_id').eq('club_id', clubId);
                     const { data: event } = await window.sbClient.from('events').select('title, clubs(name)').eq('id', id).single();
+                    
                     if (members && members.length > 0 && event) {
+                        const title = status === 'approved' ? 'New Event Posted!' : 'Event Request Rejected';
+                        const message = status === 'approved'
+                            ? `The event "${event.title}" has been approved and posted to ${event.clubs.name}'s calendar.`
+                            : `Your event request for "${event.title}" in ${event.clubs.name} has been rejected. Reason: ${reason || 'None provided.'}`;
+                            
                         const notifications = members.map(m => ({
                             user_id: m.user_id,
-                            title: 'New Event Posted!',
-                            message: `The event "${event.title}" has been approved and posted to ${event.clubs.name}'s calendar.`
+                            title: title,
+                            message: message
                         }));
                         await window.sbClient.from('notifications').insert(notifications);
                     }
+                    
+                    eventsList.innerHTML = '';
+                    eventsLoading.style.display = 'block';
+                    await loadPendingEvents();
+                } else {
+                    window.showToast(`Failed to ${action} event.`, 'error');
                 }
-                
-                eventsList.innerHTML = '';
-                eventsLoading.style.display = 'block';
-                await loadPendingEvents();
-            } else {
-                alert(`Failed to ${action} event.`);
+            } catch (e) {
+                window.showToast('Error applying decision.', 'error');
+                console.error(e);
             }
-        } catch (e) {
-            alert('Error applying decision.');
-            console.error(e);
-        }
+        });
     }
 
     const socialsList = document.getElementById('pending-socials-list');
@@ -235,36 +270,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     window.handleSocialDecision = async (id, action, clubId, title, url) => {
-        if (!confirm(\`Are you sure you want to \${action} this social link?\`)) return;
+        promptForReason(action, async (reason) => {
+            try {
+                const status = action === 'approve' ? 'approved' : 'rejected';
+                const { error } = await window.sbClient
+                    .from('pending_socials')
+                    .update({ status })
+                    .eq('id', id);
 
-        try {
-            const status = action === 'approve' ? 'approved' : 'rejected';
-            const { error } = await window.sbClient
-                .from('pending_socials')
-                .update({ status })
-                .eq('id', id);
-
-            if (!error) {
-                if (status === 'approved' && clubId) {
-                    const { data: clubData } = await window.sbClient.from('clubs').select('socials').eq('id', clubId).single();
-                    if (clubData) {
-                        const currentSocials = clubData.socials || {};
-                        const platformKey = title.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        currentSocials[platformKey] = url;
-                        await window.sbClient.from('clubs').update({ socials: currentSocials }).eq('id', clubId);
+                if (!error) {
+                    if (status === 'approved' && clubId) {
+                        const { data: clubData } = await window.sbClient.from('clubs').select('socials').eq('id', clubId).single();
+                        if (clubData) {
+                            const currentSocials = clubData.socials || {};
+                            const platformKey = title.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            currentSocials[platformKey] = url;
+                            await window.sbClient.from('clubs').update({ socials: currentSocials }).eq('id', clubId);
+                        }
                     }
+                    
+                    // Notify club members
+                    const { data: members } = await window.sbClient.from('club_members').select('user_id').eq('club_id', clubId);
+                    const { data: club } = await window.sbClient.from('clubs').select('name').eq('id', clubId).single();
+                    if (members && members.length > 0 && club) {
+                        const notifTitle = status === 'approved' ? 'Social Link Approved!' : 'Social Link Rejected';
+                        const notifMessage = status === 'approved'
+                            ? `The social link "${title}" has been approved and added to ${club.name}.`
+                            : `Your social link request for "${title}" in ${club.name} has been rejected. Reason: ${reason || 'None provided.'}`;
+                            
+                        const notifications = members.map(m => ({
+                            user_id: m.user_id,
+                            title: notifTitle,
+                            message: notifMessage
+                        }));
+                        await window.sbClient.from('notifications').insert(notifications);
+                    }
+                    
+                    socialsList.innerHTML = '';
+                    socialsLoading.style.display = 'block';
+                    await loadPendingSocials();
+                } else {
+                    window.showToast(`Failed to ${action} social link.`, 'error');
                 }
-                
-                socialsList.innerHTML = '';
-                socialsLoading.style.display = 'block';
-                await loadPendingSocials();
-            } else {
-                alert(\`Failed to \${action} social link.\`);
+            } catch (e) {
+                window.showToast('Error applying decision.', 'error');
+                console.error(e);
             }
-        } catch (e) {
-            alert('Error applying decision.');
-            console.error(e);
-        }
+        });
     }
 
     loadPending();

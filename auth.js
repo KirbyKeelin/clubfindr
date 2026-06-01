@@ -259,9 +259,15 @@ if (localStorage.getItem('darkMode') === 'enabled') {
                     .notif-item.unread { background: #eff6ff; }
                     body.dark-mode .notif-item.unread { background: #1e3a8a; }
                     .notif-title { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+                    body.dark-mode .notif-title { color: #f9fafb; }
                     .notif-msg { font-size: 13px; color: #555; }
                     body.dark-mode .notif-msg { color: #d1d5db; }
                     .mark-all-btn { font-size: 12px; color: #3b82f6; cursor: pointer; border:none; background:none; }
+                    /* Scrollbar for dropdown */
+                    #notif-dropdown::-webkit-scrollbar { width: 8px; }
+                    #notif-dropdown::-webkit-scrollbar-track { background: transparent; }
+                    #notif-dropdown::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+                    body.dark-mode #notif-dropdown::-webkit-scrollbar-thumb { background: #4b5563; }
                 </style>
                 <button id="notif-bell-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
@@ -338,6 +344,73 @@ if (localStorage.getItem('darkMode') === 'enabled') {
             fetchNotifications();
             setInterval(fetchNotifications, 30000);
         }
+
+        // ==========================================
+        // GLOBAL TOAST NOTIFICATION SYSTEM
+        // ==========================================
+        const toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
+
+        const toastStyles = document.createElement('style');
+        toastStyles.innerHTML = `
+            #toast-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                pointer-events: none;
+            }
+            .toast {
+                min-width: 250px;
+                background: white;
+                color: #333;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                transform: translateX(120%);
+                opacity: 0;
+                transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                border-left: 5px solid #3b82f6;
+            }
+            .toast.show {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            body.dark-mode .toast {
+                background: #1f2937;
+                color: #f9fafb;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+            .toast.success { border-left-color: #10b981; }
+            .toast.error { border-left-color: #ef4444; }
+        `;
+        document.head.appendChild(toastStyles);
+
+        window.showToast = function(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? '✅' : '⚠️';
+            toast.innerHTML = `<span>${icon}</span><span style="flex:1; font-size:14px;">${message}</span>`;
+            
+            toastContainer.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Remove after 3.5s
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        };
     });
 
     /* ---------- Expose globally ---------- */
@@ -350,4 +423,3 @@ if (localStorage.getItem('darkMode') === 'enabled') {
         authHeaders
     };
 })();
-

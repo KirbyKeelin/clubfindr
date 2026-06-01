@@ -79,6 +79,19 @@
         
     </div>
 
+    <!-- Action Reason Modal -->
+    <div id="actionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:white; padding:20px; border-radius:8px; width:90%; max-width:500px; display:flex; flex-direction:column;">
+            <h3 id="actionModalTitle" style="margin-top:0; color:black;">Provide a Reason</h3>
+            <p id="actionModalDesc" style="font-size:14px; color:#555; margin-bottom:15px;">Why are you approving/rejecting this request?</p>
+            <textarea id="actionReason" rows="4" placeholder="Type your reason here..." style="width:100%; border:1px solid #ddd; padding:8px; margin-bottom:15px;"></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn-secondary" id="cancelActionBtn">Cancel</button>
+                <button class="btn-primary" id="confirmActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>

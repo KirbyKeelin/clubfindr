@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const subject = document.getElementById('supportSubject').value;
             const message = document.getElementById('supportMessage').value.trim();
 
-            if (!subject) { alert('Please select a subject.'); return; }
-            if (!message) { alert('Please enter a message.'); return; }
+            if (!subject) { window.showToast('Please select a subject.', 'error'); return; }
+            if (!message) { window.showToast('Please enter a message.', 'error'); return; }
 
             submitBtn.textContent = 'Sending...';
             submitBtn.disabled = true;
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.error('Support submit error:', e);
                 submitBtn.textContent = 'Submit';
                 submitBtn.disabled = false;
-                alert('Failed to send message: ' + e.message);
+                window.showToast('Failed to send message: ' + e.message, 'error');
                 return;
             }
 
