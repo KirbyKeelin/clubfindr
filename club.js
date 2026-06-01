@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (clubErr) throw clubErr;
 
         const { data: members } = await window.sbClient.from('club_members').select('user_id, role, joined_at, profiles(id, display_name, email, avatar_url)').eq('club_id', clubId);
-        const { data: events } = await window.sbClient.from('events').select('*').eq('club_id', clubId).order('start_time', { ascending: true });
+        const { data: events } = await window.sbClient.from('events').select('*').eq('club_id', clubId).eq('status', 'approved').order('start_time', { ascending: true });
         club = {
             ...clubData,
             members: (members || []).map(m => ({

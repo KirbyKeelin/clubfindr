@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser = await window.ClubFinderAuth.getCurrentUser();
     } catch(e) {}
 
-    if (!currentUser) {
+    if (!currentUser || !currentUser.isAdmin) {
         window.location.href = 'index.html';
         return;
     }

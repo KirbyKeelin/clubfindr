@@ -81,7 +81,8 @@ if (localStorage.getItem('darkMode') === 'enabled') {
             displayName: profile?.display_name || user.email.split('@')[0],
             username: profile?.username || user.email.split('@')[0],
             bio: profile?.bio || '',
-            avatarUrl: profile?.avatar_url || null
+            avatarUrl: profile?.avatar_url || null,
+            isAdmin: profile?.is_admin || false
         };
     }
 
@@ -132,6 +133,26 @@ if (localStorage.getItem('darkMode') === 'enabled') {
             } else if (isSignInPage) {
                 // If they are on signin but already have a session, send them to the appropriate place
                 window.location.href = hasDisplayName ? 'index.html' : 'setup-profile.html';
+            }
+
+            // Inject Admin link if user is admin
+            if (profile?.is_admin && !isSignInPage && !isSetupProfilePage) {
+                const addAdminLink = () => {
+                    const sidebarNav = document.querySelector('.sidebar-left nav');
+                    if (sidebarNav && !sidebarNav.querySelector('a[href="admin.html"]')) {
+                        const adminLink = document.createElement('a');
+                        adminLink.href = 'admin.html';
+                        adminLink.className = 'menu-item';
+                        adminLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #ef4444;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span style="color:#ef4444; font-weight:bold;">Admin Panel</span>`;
+                        sidebarNav.appendChild(adminLink);
+                    }
+                };
+                
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', addAdminLink);
+                } else {
+                    addAdminLink();
+                }
             }
         }
     });
