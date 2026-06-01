@@ -45,6 +45,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentUser = null;
     try { currentUser = await window.ClubFinderAuth.getCurrentUser(); } catch (e) {}
 
+    const manageBtn = document.getElementById('manageTabBtn');
+    if (currentUser && club.members) {
+        const myMember = club.members.find(m => m.userId === currentUser.id);
+        if (myMember && ['owner', 'leader', 'faculty'].includes(myMember.role)) {
+            if (manageBtn) manageBtn.style.display = 'inline-block';
+        }
+    }
+
     let calendarDate = new Date();
 
 
@@ -229,13 +237,125 @@ document.addEventListener('DOMContentLoaded', async () => {
         contentArea.innerHTML = html;
     }
 
-    /* ====== TAB SWITCHING ====== */
-    const tabs = ['Main', 'Calendar', 'Members', 'Contact Info', 'Socials'];
-    const renderers = [renderMain, renderCalendar, renderMembers, renderContactInfo, renderSocials];
+    /* ====== MANAGE TAB ====== */
+    function renderManage() {
+        const socials = club.socials || {};
+        contentArea.innerHTML = `
+            <div class="tab-manage" style="padding: 30px;">
+                <h3>Manage Club</h3>
+                
+                <div class="settings-card" style="margin-bottom: 20px;">
+                    <h4>Edit Club Info</h4>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="editDesc" rows="3" style="width:100%; border:1px solid #ddd; padding:8px;">${esc(club.description || '')}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Banner Image URL</label>
+                        <input type="text" id="editBanner" value="${esc(club.banner_url || '')}" style="width:100%; border:1px solid #ddd; padding:8px;">
+                    </div>
+                    <button class="btn-primary" id="saveInfoBtn">Save Info</button>
+                </div>
 
-    buttons.forEach((btn, i) => {
+                <div class="settings-card" style="margin-bottom: 20px;">
+                    <h4>Edit Social Links</h4>
+                    <div class="form-group">
+                        <label>Instagram URL</label>
+                        <input type="text" id="editInsta" value="${esc(socials.instagram || '')}" style="width:100%; border:1px solid #ddd; padding:8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Twitter URL</label>
+                        <input type="text" id="editTwitter" value="${esc(socials.twitter || '')}" style="width:100%; border:1px solid #ddd; padding:8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Website URL</label>
+                        <input type="text" id="editWeb" value="${esc(socials.website || '')}" style="width:100%; border:1px solid #ddd; padding:8px;">
+                    </div>
+                    <button class="btn-primary" id="saveSocialsBtn">Save Socials</button>
+                </div>
+
+                <div class="settings-card">
+                    <h4>Request to Post Event</h4>
+                    <p style="font-size:14px; color:#555;">Events require faculty/admin approval before they go live on the calendar.</p>
+                    <div class="form-group">
+                        <label>Event Title</label>
+                        <input type="text" id="evTitle" placeholder="e.g. First Meeting" style="width:100%; border:1px solid #ddd; padding:8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="datetime-local" id="evStart" style="width:100%; border:1px solid #ddd; padding:8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>End Time</label>
+                        <input type="datetime-local" id="evEnd" style="width:100%; border:1px solid #ddd; padding:8px;">
+                    </div>
+                    <button class="btn-primary" id="reqEventBtn">Submit Event for Review</button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('saveInfoBtn').addEventListener('click', async () => {
+            const d = document.getElementById('editDesc').value;
+            const b = document.getElementById('editBanner').value;
+            await window.sbClient.from('clubs').update({ description: d, banner_url: b }).eq('id', clubId);
+            club.description = d;
+            club.banner_url = b;
+            document.getElementById('clubTitle').textContent = club.name;
+            const bannerImg = document.querySelector('.club-banner img');
+            if (bannerImg) bannerImg.src = club.banner_url || 'https://picsum.photos/1200/400?random=10';
+            alert('Club info updated!');
+        });
+
+        document.getElementById('saveSocialsBtn').addEventListener('click', async () => {
+            const inst = document.getElementById('editInsta').value;
+            const twit = document.getElementById('editTwitter').value;
+            const web = document.getElementById('editWeb').value;
+            const newSocials = { instagram: inst, twitter: twit, website: web };
+            await window.sbClient.from('clubs').update({ socials: newSocials }).eq('id', clubId);
+            club.socials = newSocials;
+            alert('Socials updated!');
+        });
+
+        document.getElementById('reqEventBtn').addEventListener('click', async () => {
+            const title = document.getElementById('evTitle').value;
+            const start = document.getElementById('evStart').value;
+            const end = document.getElementById('evEnd').value;
+            if(!title || !start) { alert('Title and Start Time required.'); return; }
+            
+            const { error } = await window.sbClient.from('events').insert({
+                club_id: clubId,
+                title: title,
+                start_time: start,
+                end_time: end || null,
+                status: 'pending'
+            });
+            if(error) {
+                alert('Failed to request event: ' + error.message);
+            } else {
+                alert('Event requested! Awaiting approval.');
+                document.getElementById('evTitle').value = '';
+                document.getElementById('evStart').value = '';
+                document.getElementById('evEnd').value = '';
+                
+                try {
+                    await window.sbClient.functions.invoke('send-event-review', {
+                        body: { clubId, title, start }
+                    });
+                } catch(e) {
+                    console.error('Email notification error:', e);
+                }
+            }
+        });
+    }
+
+    /* ====== TAB SWITCHING ====== */
+    const allButtons = document.querySelectorAll('.club-top-nav button');
+    const tabs = ['Main', 'Calendar', 'Members', 'Contact Info', 'Socials', 'Manage'];
+    const renderers = [renderMain, renderCalendar, renderMembers, renderContactInfo, renderSocials, renderManage];
+
+    allButtons.forEach((btn, i) => {
         btn.addEventListener('click', () => {
-            buttons.forEach(b => b.classList.remove('active'));
+            allButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             renderers[i]();
         });

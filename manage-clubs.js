@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const name = document.getElementById('newClubName').value.trim();
             const desc = document.getElementById('newClubDesc').value.trim();
             const tagsRaw = document.getElementById('newClubTags').value.trim();
+            const faculty = document.getElementById('newClubFaculty').value.trim();
+            const info = document.getElementById('newClubInfo').value.trim();
 
             if (!name) { alert('Please enter a club name.'); return; }
             if (!currentUser) { alert('You must be signed in to create a club.'); return; }
@@ -69,6 +71,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         name,
                         description: desc,
                         tags,
+                        faculty_moderator: faculty,
+                        additional_info: info,
                         status: 'pending',
                         created_by: currentUser.id
                     })
@@ -95,6 +99,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('newClubName').value = '';
                 document.getElementById('newClubDesc').value = '';
                 document.getElementById('newClubTags').value = '';
+                document.getElementById('newClubFaculty').value = '';
+                document.getElementById('newClubInfo').value = '';
                 createBtn.textContent = 'Club Created!';
                 createBtn.style.background = '#4CAF50';
                 setTimeout(() => { createBtn.textContent = 'Create Club'; createBtn.style.background = '#1f2937'; createBtn.disabled = false; }, 2000);

@@ -41,6 +41,23 @@
                 <h3>All Caught Up!</h3>
                 <p>There are no pending club requests right now.</p>
             </div>
+
+            <hr style="margin: 40px 0; border: none; border-top: 1px solid #ddd;">
+            
+            <h1>Pending Event Requests</h1>
+            <p class="page-subtitle">Review and approve new events proposed by clubs.</p>
+            
+            <div id="loading-events" style="text-align: center; margin: 40px 0;">Loading pending events...</div>
+            
+            <div id="pending-events-list" style="display:flex; flex-direction:column; gap:15px;">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div id="empty-events-state" class="empty-state" style="display:none;">
+                <div class="empty-state-icon">✅</div>
+                <h3>All Caught Up!</h3>
+                <p>There are no pending event requests right now.</p>
+            </div>
         </main>
         
     </div>
